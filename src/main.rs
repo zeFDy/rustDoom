@@ -74,10 +74,35 @@ impl mapProcFile
         }
     }
 
+    pub fn extractModelBlock(&mut self, sBlock:String)
+    {
+
+    }
+
     pub fn extractData(&mut self)
     {
         self.checkFirstLine();
+
+        let mut sBlockName = self.getNextBlockName();
+        println!("{}", sBlockName);
+        let mut sBlockData = self.getNextBlockData();
+        println!("{}", sBlockData);
         
+        match &sBlockName as &str 
+        {
+            "model" =>  self.extractModelBlock(sBlockData),
+            _       =>  exit(-2),
+        }
+        /*
+        let mut nextString = self.getNextString();   
+        println!("{}", nextString);
+        let mut nextNumber = self.getNextNumber();   
+        println!("{}", nextNumber);
+        let mut nextString = self.getNextString();   
+        println!("{}", nextString);
+        let mut nextNumber = self.getNextNumber();   
+        println!("{}", nextNumber);
+        */
     }
 
     pub fn getNextLine(&mut self) -> String
@@ -136,17 +161,196 @@ impl mapProcFile
         sLine
     }
 
-    pub fn getNextString() -> String
+    pub fn getNextString(&mut self) -> String
     {
-        "".to_string()
+        let mut     iStatus:i32 = 0;
+		let mut     c:u8;
+        let mut     iBracket:i32 = 0;
+		let mut     sNextString:String = "".to_string();
+
+		loop
+		{
+			c = self.inputBuffer[self.readOffset];
+            if c == 0u8 {break};
+
+            self.readOffset +=1;
+
+			if c == b'"'	    {iBracket+=1;}
+			if iBracket == 2	{break;}
+
+			if iBracket == 1
+			{
+				if c != b'"'	
+                {
+                    let key:char = c as char;
+                    sNextString += &key.to_string();
+                }
+			}
+
+            if self.readOffset >= self.uiSize
+            {
+                self.bEOF = true;
+                return(sNextString);
+            }
+
+		}
+
+		sNextString
     }
 
-    pub fn getNextNumber() -> f64
+    pub fn getNextNumber(&mut self) -> f64
     {
-        0.00
+        let mut     iStatus:i32     = 0;
+		let mut     c:u8            = b' ';
+        let mut     iComment:i32    = 0;
+        let mut     iDejaVu:i32     = 0;
+        let mut     iIsANumber:i32;
+        //char		caDummy[10];
+        let mut     sNumberAsString:String = "".to_string();
+        
+    
+            loop
+            {
+                c = self.inputBuffer[self.readOffset];
+                if c == 0u8 {break};
+
+                if self.readOffset >= self.uiSize
+                {
+                    self.bEOF = true;
+                    let Result:f64  = sNumberAsString.parse().unwrap();
+                    return(Result);
+                }
+    
+                if      c == b'/' 
+                    &&  self.inputBuffer[self.readOffset +1] == b'*'
+                {
+                    loop
+                    {
+                        if      c == b'*' 
+                            &&  self.inputBuffer[self.readOffset +1] == b'/'   	{break;}
+
+                        self.readOffset +=1;
+                        c = self.inputBuffer[self.readOffset];
+                    }
+                }
+    
+                c = self.inputBuffer[self.readOffset];
+                    
+                if ((c >= b'0') && (c <= b'9') || (c == b'.') || (c == b'-'))
+                {
+                    iIsANumber = 1;
+                }
+                else
+                {
+                    iIsANumber = 0;
+                }
+    
+                if (iIsANumber == 1 && iDejaVu == 0)
+                {
+                    iDejaVu = 1;
+                }
+    
+                if (iIsANumber == 0 && iDejaVu == 1)
+                {
+                    break;
+                }
+    
+                if (iDejaVu == 1)
+                {
+                    let key:char = c as char;
+                    sNumberAsString += &key.to_string();
+                }
+    
+                self.readOffset +=1;
+            }
+    
+        let Result:f64  = sNumberAsString.parse().unwrap();
+        Result
     }
 
+    pub fn getNextBlockName(&mut self) -> String
+    {
+        let mut     c:u8;
+        let mut     sBlockName:String = "".to_string();
+    
+        loop
+        {
+            if self.readOffset >= self.uiSize
+            {
+                self.bEOF = true;
+                return(sBlockName);
+            }
 
+            c = self.inputBuffer[self.readOffset];
+           
+            
+            if c == b'{'	{break;}
+
+            if ((c > b'A')
+                && (c < b'z'))
+            {
+                let key:char = c as char;
+                sBlockName += &key.to_string();
+            }
+            
+            self.readOffset +=1;
+        }
+        
+        return	sBlockName;
+    }
+
+    pub fn getNextBlockData(&mut self) -> String
+    {
+        let mut     c:u8;
+        let mut     sBlockData:String = "".to_string();
+        let mut		iIndent = 0;
+        let mut	    bDejaVu = false;
+        let mut		bSendToOutput = true;
+    
+        loop
+        {
+            if self.readOffset >= self.uiSize
+            {
+                self.bEOF = true;
+                return(sBlockData);
+            }
+
+            c = self.inputBuffer[self.readOffset];
+           
+            bSendToOutput = true;
+
+            if	c == b'{'
+            { 
+                if bDejaVu == false
+                {
+                    bSendToOutput = false;
+                }
+                bDejaVu=true;
+                iIndent+=1; 
+            }
+
+            if	c == b'}'
+            { 
+                iIndent-=1; 
+            }
+            
+            if (bDejaVu == true && iIndent == 0)
+            {
+                break;
+            }
+                        
+            if (bSendToOutput == true)
+            {
+                let key:char = c as char;
+                sBlockData += &key.to_string();
+            }
+
+            self.readOffset +=1;
+        }
+
+        return	sBlockData;
+    
+    }
 }
 
 fn HexaDump(toDisplay:&Vec<u8>)
@@ -183,6 +387,7 @@ fn main()
 {
     welcomeBanner();
     let mut ourProcFile = mapProcFile::open("maps\\admin.proc");
+
     ourProcFile.extractData();    
 
     return;
