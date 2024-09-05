@@ -1,13 +1,45 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+#![allow(dead_code)]
 
-
-use std::fs;
+use std::{fs, io::Write};
 use colored::Colorize;
 use std::process::exit;
+use fs::File;
+use chrono::{DateTime, Utc};
+
+
+pub struct myLogFile
+{
+    myFile :File,
+}
+
+impl myLogFile
+{
+    pub fn open() -> myLogFile
+    {
+        let localFile = File::create("myLogFile02.txt").expect("Cannot create file myLogFile02.txt");   
+        let thisFile = myLogFile
+        {
+            myFile      :localFile,
+        };
+
+        thisFile
+    }
+
+    pub fn log(&mut self, sMessageToLog:String)
+    {
+        write!(self.myFile, "{}", sMessageToLog).expect("Cannot write to file myLogFile02.txt");
+    }
+
+}
+
+
+
 
 pub struct mapProcFile
 {
+    logFile         :myLogFile,
     //pathProcFile  :String,
     iType           :u8,
     inputBuffer     :Vec<u8>,
@@ -19,14 +51,15 @@ pub struct mapProcFile
 
 impl mapProcFile
 {
-    pub fn open(fileName:&str) -> mapProcFile
+    pub fn open(theLogFile:myLogFile, fileName:&str) -> mapProcFile
     {
-        let ucBuffer    = fs::read(fileName).expect("Can't read file");
-        let bufferSize = ucBuffer.len();
-
-        let mut ourFile = mapProcFile
+        let ucBuffer          = fs::read(fileName).expect("Can't read file");
+        let bufferSize          = ucBuffer.len();
+        
+        let ourFile = mapProcFile
         {
             //pathProcFile  : fileName.to_string(),
+            logFile         : theLogFile,
             iType           : 0x03,
             inputBuffer     : ucBuffer,
             readOffset      : 0x00,
@@ -68,31 +101,63 @@ impl mapProcFile
 
         match self.iType
         {
-            3   =>  println!("DOOM3 proc file"),
-            4   =>  println!("QUAKE4 proc file"),
+            3   =>  {println!("DOOM3 proc file");   self.logFile.log("DOOM3 proc file\n".to_string());        /*fs::write("log.txt", "DOOM3 proc file") .expect("Could not write to log file");*/  },
+            4   =>  {println!("QUAKE4 proc file");  self.logFile.log("QUAKE4 proc file\n".to_string());       /*fs::write("log.txt", "QUAKE4 proc file") .expect("Could not write to log file");*/ },
             _   =>  exit(-1),
         }
     }
 
     pub fn extractModelBlock(&mut self, sBlock:String)
     {
+            //println!("extractModelBlock");
+            self.logFile.log("extractModelBlock\n".to_string());
+            self.logFile.log(sBlock.to_string());
+    }
 
+    pub fn extractInterreaPortalsBlock(&mut self, sBlock:String)
+    {
+            //println!("extractModelBlock");
+            self.logFile.log("extractInterreaPortalsBlock\n".to_string());
+            self.logFile.log(sBlock.to_string());
+    }
+
+    pub fn extractNodesBlock(&mut self, sBlock:String)
+    {
+            //println!("extractModelBlock");
+            self.logFile.log("extractModelBlock\n".to_string());
+            self.logFile.log(sBlock.to_string());
+    }
+
+    pub fn extractShadowModelBlock(&mut self, sBlock:String)
+    {
+            //println!("extractModelBlock");
+            self.logFile.log("extractShadowModelBlock\n".to_string());
+            self.logFile.log(sBlock.to_string());
     }
 
     pub fn extractData(&mut self)
     {
         self.checkFirstLine();
 
-        let mut sBlockName = self.getNextBlockName();
-        println!("{}", sBlockName);
-        let mut sBlockData = self.getNextBlockData();
-        println!("{}", sBlockData);
-        
-        match &sBlockName as &str 
+        loop
         {
-            "model" =>  self.extractModelBlock(sBlockData),
-            _       =>  exit(-2),
+
+            
+            let sBlockName = self.getNextBlockName();
+            //println!("{}", sBlockName);
+            let sBlockData = self.getNextBlockData();
+            //println!("{}", sBlockData);
+            
+            match &sBlockName as &str 
+            {
+                "model"             =>  self.extractModelBlock(sBlockData),
+                "interreaPortals"   =>  self.extractInterreaPortalsBlock(sBlockData),       //{self.logFile.log("ToDo :: extract interreaPortals\n".to_string());     /*println!("ToDo :: extract interreaPortals");   fs::write("log.txt", "ToDo :: extract interreaPortals") .expect("Could not write to log file");*/ },
+                "nodes"             =>  self.extractNodesBlock(sBlockData),                 //{self.logFile.log("ToDo :: extract nodes\n".to_string());               /*println!("ToDo :: extract nodes");             fs::write("log.txt", "ToDo :: extract nodes") .expect("Could not write to log file");*/ },
+                "shadowModel"       =>  self.extractShadowModelBlock(sBlockData),           //{self.logFile.log("ToDo :: extract shadowModel\n".to_string());         /*println!("ToDo :: extract shadowModel");       fs::write("log.txt", "ToDo :: extract shadowModel") .expect("Could not write to log file");*/ },
+                _                   =>  break,  //{println!("Unknown block name {}", sBlockName); exit(-2);},
+            }
         }
+
         /*
         let mut nextString = self.getNextString();   
         println!("{}", nextString);
@@ -108,13 +173,13 @@ impl mapProcFile
     pub fn getNextLine(&mut self) -> String
     {
         let mut     c:u8;
-        let mut		iSize = 0;
+        //let mut   iSize = 0;
         let mut     sLine: String = "".to_string();
     
             if self.readOffset >= self.uiSize
             {
                 self.bEOF = true;
-                return(sLine);
+                return sLine;
             }
     
             loop
@@ -126,21 +191,21 @@ impl mapProcFile
                 if self.readOffset >= self.uiSize
                 {
                     self.bEOF = true;
-                    return(sLine);
+                    return sLine;
                 }
     
-                iSize+=1;
+                //iSize+=1;
     
                 if c == 10 && self.inputBuffer[self.readOffset] == 13
                 {
                     //printf("cas 1013\n");
-                    iSize+=1;	// to skip 13
+                    //iSize+=1;	// to skip 13
                     break;
                 }
                 if c == 13 && self.inputBuffer[self.readOffset] == 10
                 {
                     //printf("cas 1310\n");
-                    iSize+=1;	// to skip 10
+                    //iSize+=1;	// to skip 10
                     break;
                 }
                 if c == 10 && self.inputBuffer[self.readOffset] != 13
@@ -163,7 +228,7 @@ impl mapProcFile
 
     pub fn getNextString(&mut self) -> String
     {
-        let mut     iStatus:i32 = 0;
+        //let mut   iStatus:i32 = 0;
 		let mut     c:u8;
         let mut     iBracket:i32 = 0;
 		let mut     sNextString:String = "".to_string();
@@ -190,7 +255,7 @@ impl mapProcFile
             if self.readOffset >= self.uiSize
             {
                 self.bEOF = true;
-                return(sNextString);
+                return sNextString;
             }
 
 		}
@@ -200,9 +265,9 @@ impl mapProcFile
 
     pub fn getNextNumber(&mut self) -> f64
     {
-        let mut     iStatus:i32     = 0;
-		let mut     c:u8            = b' ';
-        let mut     iComment:i32    = 0;
+        //let mut   iStatus:i32     = 0;
+		let mut     c:u8;
+        //let mut   iComment:i32    = 0;
         let mut     iDejaVu:i32     = 0;
         let mut     iIsANumber:i32;
         //char		caDummy[10];
@@ -218,7 +283,7 @@ impl mapProcFile
                 {
                     self.bEOF = true;
                     let Result:f64  = sNumberAsString.parse().unwrap();
-                    return(Result);
+                    return Result;
                 }
     
                 if      c == b'/' 
@@ -236,7 +301,7 @@ impl mapProcFile
     
                 c = self.inputBuffer[self.readOffset];
                     
-                if ((c >= b'0') && (c <= b'9') || (c == b'.') || (c == b'-'))
+                if (c >= b'0' && c <= b'9') || c == b'.' || c == b'-'
                 {
                     iIsANumber = 1;
                 }
@@ -245,17 +310,17 @@ impl mapProcFile
                     iIsANumber = 0;
                 }
     
-                if (iIsANumber == 1 && iDejaVu == 0)
+                if iIsANumber == 1 && iDejaVu == 0
                 {
                     iDejaVu = 1;
                 }
     
-                if (iIsANumber == 0 && iDejaVu == 1)
+                if iIsANumber == 0 && iDejaVu == 1
                 {
                     break;
                 }
     
-                if (iDejaVu == 1)
+                if iDejaVu == 1
                 {
                     let key:char = c as char;
                     sNumberAsString += &key.to_string();
@@ -278,7 +343,7 @@ impl mapProcFile
             if self.readOffset >= self.uiSize
             {
                 self.bEOF = true;
-                return(sBlockName);
+                return sBlockName;
             }
 
             c = self.inputBuffer[self.readOffset];
@@ -286,8 +351,8 @@ impl mapProcFile
             
             if c == b'{'	{break;}
 
-            if ((c > b'A')
-                && (c < b'z'))
+            if      c > b'A'
+                &&  c < b'z'
             {
                 let key:char = c as char;
                 sBlockName += &key.to_string();
@@ -305,14 +370,14 @@ impl mapProcFile
         let mut     sBlockData:String = "".to_string();
         let mut		iIndent = 0;
         let mut	    bDejaVu = false;
-        let mut		bSendToOutput = true;
+        let mut	    bSendToOutput;
     
         loop
         {
             if self.readOffset >= self.uiSize
             {
                 self.bEOF = true;
-                return(sBlockData);
+                return sBlockData;
             }
 
             c = self.inputBuffer[self.readOffset];
@@ -334,12 +399,12 @@ impl mapProcFile
                 iIndent-=1; 
             }
             
-            if (bDejaVu == true && iIndent == 0)
+            if bDejaVu == true && iIndent == 0
             {
                 break;
             }
                         
-            if (bSendToOutput == true)
+            if bSendToOutput == true
             {
                 let key:char = c as char;
                 sBlockData += &key.to_string();
@@ -385,8 +450,12 @@ fn HexaDump(toDisplay:&Vec<u8>)
 
 fn main() 
 {
-    welcomeBanner();
-    let mut ourProcFile = mapProcFile::open("maps\\admin.proc");
+    let mut logFile = myLogFile::open();
+    //logFile.log("sMessageToLog\n".to_string());
+    //logFile.log("sMessageToLog\n".to_string());
+
+    welcomeBanner(&mut logFile);
+    let mut ourProcFile = mapProcFile::open(logFile, "maps\\admin.proc");
 
     ourProcFile.extractData();    
 
@@ -396,8 +465,25 @@ fn main()
 
 
 
-fn welcomeBanner()
+fn welcomeBanner(logFile:&mut myLogFile)
 {
+    //let now: DateTime<Utc> = Utc::now();
+    let now  = chrono::offset::Local::now();
+
+    logFile.log("\n".to_string());
+    logFile.log("                                       \\o.o/\n".to_string());
+    logFile.log("---------------------------------.ooO---(_)---Ooo.----------\n".to_string());
+    logFile.log("rustDoom\n".to_string());
+    let sDate = format!("{}\n", now.format("%m/%d/%Y %T"));
+    logFile.log(sDate.to_string());
+    logFile.log("--------------------------------------------Oooo.-----------\n".to_string());
+    logFile.log("                                     .oooO  (   )\n".to_string());
+    logFile.log("                                     (   )   ) /\n".to_string());
+    logFile.log("                                      \\ (   (_/\n".to_string());
+    logFile.log("                                       \\_)\n".to_string());
+    logFile.log("\n".to_string());
+
+
     print!("\n");
     print!("                                       \\");
     print!("{}", "o".red());
@@ -406,7 +492,8 @@ fn welcomeBanner()
     print!("{}", "/\n".normal());
     print!("---------------------------------.ooO---(_)---Ooo.----------\n");
     print!("rustDoom\n");
-    print!("\n");
+    print!("{}\n", now.format("%m/%d/%Y %T"));
+    //print!("\n");
     print!("--------------------------------------------Oooo.-----------\n");
     print!("                                     .oooO  (   )\n");
     print!("                                     (   )   ) /\n");
