@@ -34,12 +34,50 @@ impl myLogFile
 
 }
 
+pub struct mtrFile
+{
+    //logFile       :myLogFile,
+    iType           :u8,
+    inputBuffer     :Vec<u8>,
+    readOffset      :usize,
+    bEOF            :bool,
+    uiSize          :usize,
+}
 
+impl mtrFile
+{
+    pub fn open(theLogFile:&mut myLogFile, fileName:&str) -> mtrFile
+    {
+        let sMessage = format!("Open mtrFile {}\n", fileName);
+        theLogFile.log(sMessage.to_string());
+        
+        let ucBuffer        = fs::read(fileName).expect("Can't read file");
+        let bufferSize        = ucBuffer.len();
+        
+        let ourFile = mtrFile
+        {
+            //pathProcFile  : fileName.to_string(),
+            //logFile       : theLogFile,
+            iType           : 0x03,
+            inputBuffer     : ucBuffer,
+            readOffset      : 0x00,
+            //carac         : 0x00,
+            bEOF            : false,
+            uiSize          : bufferSize,
+        };
+
+        //self.pathProcFile   = fileName.clone();
+        //let contenuProcFile = fs::read_to_string(pathProcFile).expect("Can't read file");
+        //HexaDump(&contenuProcFile);     // borrow it (by reference) to avoid movement...
+        //println!("{}", contenuProcFile);
+        ourFile
+	}
+}
 
 
 pub struct mapProcFile
 {
-    logFile         :myLogFile,
+    //logFile       :myLogFile,
     //pathProcFile  :String,
     iType           :u8,
     inputBuffer     :Vec<u8>,
@@ -51,15 +89,18 @@ pub struct mapProcFile
 
 impl mapProcFile
 {
-    pub fn open(theLogFile:myLogFile, fileName:&str) -> mapProcFile
+    pub fn open(theLogFile:&mut myLogFile, fileName:&str) -> mapProcFile
     {
+        let sMessage = format!("Open mapProcFile {}\n", fileName);
+        theLogFile.log(sMessage.to_string());
+        
         let ucBuffer          = fs::read(fileName).expect("Can't read file");
         let bufferSize          = ucBuffer.len();
         
         let ourFile = mapProcFile
         {
             //pathProcFile  : fileName.to_string(),
-            logFile         : theLogFile,
+            //logFile       : theLogFile,
             iType           : 0x03,
             inputBuffer     : ucBuffer,
             readOffset      : 0x00,
@@ -75,7 +116,7 @@ impl mapProcFile
         ourFile
     }
 
-    pub fn checkFirstLine(&mut self)
+    pub fn checkFirstLine(&mut self, theLogFile:&mut myLogFile)
     {
         let firstLine = self.getNextLine();
         println!("{}", firstLine);
@@ -101,43 +142,43 @@ impl mapProcFile
 
         match self.iType
         {
-            3   =>  {println!("DOOM3 proc file");   self.logFile.log("DOOM3 proc file\n".to_string());        /*fs::write("log.txt", "DOOM3 proc file") .expect("Could not write to log file");*/  },
-            4   =>  {println!("QUAKE4 proc file");  self.logFile.log("QUAKE4 proc file\n".to_string());       /*fs::write("log.txt", "QUAKE4 proc file") .expect("Could not write to log file");*/ },
+            3   =>  {println!("DOOM3 proc file");   theLogFile.log("DOOM3 proc file\n".to_string());        /*fs::write("log.txt", "DOOM3 proc file") .expect("Could not write to log file");*/  },
+            4   =>  {println!("QUAKE4 proc file");  theLogFile.log("QUAKE4 proc file\n".to_string());       /*fs::write("log.txt", "QUAKE4 proc file") .expect("Could not write to log file");*/ },
             _   =>  exit(-1),
         }
     }
 
-    pub fn extractModelBlock(&mut self, sBlock:String)
+    pub fn extractModelBlock(&mut self, theLogFile:&mut myLogFile, sBlock:String)
     {
             //println!("extractModelBlock");
-            self.logFile.log("extractModelBlock\n".to_string());
-            self.logFile.log(sBlock.to_string());
+            theLogFile.log("extractModelBlock\n".to_string());
+            theLogFile.log(sBlock.to_string());
     }
 
-    pub fn extractInterreaPortalsBlock(&mut self, sBlock:String)
+    pub fn extractInterreaPortalsBlock(&mut self, theLogFile:&mut myLogFile, sBlock:String)
     {
             //println!("extractModelBlock");
-            self.logFile.log("extractInterreaPortalsBlock\n".to_string());
-            self.logFile.log(sBlock.to_string());
+            theLogFile.log("extractInterreaPortalsBlock\n".to_string());
+            theLogFile.log(sBlock.to_string());
     }
 
-    pub fn extractNodesBlock(&mut self, sBlock:String)
+    pub fn extractNodesBlock(&mut self, theLogFile:&mut myLogFile, sBlock:String)
     {
             //println!("extractModelBlock");
-            self.logFile.log("extractModelBlock\n".to_string());
-            self.logFile.log(sBlock.to_string());
+            theLogFile.log("extractModelBlock\n".to_string());
+            theLogFile.log(sBlock.to_string());
     }
 
-    pub fn extractShadowModelBlock(&mut self, sBlock:String)
+    pub fn extractShadowModelBlock(&mut self, theLogFile:&mut myLogFile, sBlock:String)
     {
             //println!("extractModelBlock");
-            self.logFile.log("extractShadowModelBlock\n".to_string());
-            self.logFile.log(sBlock.to_string());
+            theLogFile.log("extractShadowModelBlock\n".to_string());
+            theLogFile.log(sBlock.to_string());
     }
 
-    pub fn extractData(&mut self)
+    pub fn extractData(&mut self, theLogFile:&mut myLogFile)
     {
-        self.checkFirstLine();
+        self.checkFirstLine(theLogFile);
 
         loop
         {
@@ -150,10 +191,10 @@ impl mapProcFile
             
             match &sBlockName as &str 
             {
-                "model"             =>  self.extractModelBlock(sBlockData),
-                "interreaPortals"   =>  self.extractInterreaPortalsBlock(sBlockData),       //{self.logFile.log("ToDo :: extract interreaPortals\n".to_string());     /*println!("ToDo :: extract interreaPortals");   fs::write("log.txt", "ToDo :: extract interreaPortals") .expect("Could not write to log file");*/ },
-                "nodes"             =>  self.extractNodesBlock(sBlockData),                 //{self.logFile.log("ToDo :: extract nodes\n".to_string());               /*println!("ToDo :: extract nodes");             fs::write("log.txt", "ToDo :: extract nodes") .expect("Could not write to log file");*/ },
-                "shadowModel"       =>  self.extractShadowModelBlock(sBlockData),           //{self.logFile.log("ToDo :: extract shadowModel\n".to_string());         /*println!("ToDo :: extract shadowModel");       fs::write("log.txt", "ToDo :: extract shadowModel") .expect("Could not write to log file");*/ },
+                "model"             =>  self.extractModelBlock(theLogFile, sBlockData),
+                "interreaPortals"   =>  self.extractInterreaPortalsBlock(theLogFile, sBlockData),       //{self.logFile.log("ToDo :: extract interreaPortals\n".to_string());     /*println!("ToDo :: extract interreaPortals");   fs::write("log.txt", "ToDo :: extract interreaPortals") .expect("Could not write to log file");*/ },
+                "nodes"             =>  self.extractNodesBlock(theLogFile, sBlockData),                 //{self.logFile.log("ToDo :: extract nodes\n".to_string());               /*println!("ToDo :: extract nodes");             fs::write("log.txt", "ToDo :: extract nodes") .expect("Could not write to log file");*/ },
+                "shadowModel"       =>  self.extractShadowModelBlock(theLogFile, sBlockData),           //{self.logFile.log("ToDo :: extract shadowModel\n".to_string());         /*println!("ToDo :: extract shadowModel");       fs::write("log.txt", "ToDo :: extract shadowModel") .expect("Could not write to log file");*/ },
                 _                   =>  break,  //{println!("Unknown block name {}", sBlockName); exit(-2);},
             }
         }
@@ -455,10 +496,10 @@ fn main()
     //logFile.log("sMessageToLog\n".to_string());
 
     welcomeBanner(&mut logFile);
-    let mut ourProcFile = mapProcFile::open(logFile, "maps\\admin.proc");
+    let mut ourProcFile = mapProcFile::open(&mut logFile, "maps\\admin.proc");
 
-    ourProcFile.extractData();    
-
+    ourProcFile.extractData(&mut logFile);    
+    let mut ourMtfFile = mtrFile::open(&mut logFile, "materials\\base_floor.mtr");
     return;
     
 }
