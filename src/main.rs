@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use std::{fs, io::Write, usize};
+use std::{fs, io::Write, usize, vec};
 use colored::Colorize;
 use std::process::exit;
 use fs::File;
@@ -74,7 +74,68 @@ impl mtrFile
 	}
 }
 
+pub struct Vertex
+{
+    x   :f64,
+    y   :f64,
+    z   :f64,
+    nx  :f64,
+    ny  :f64,
+    nz  :f64,
+    s   :f64,
+    t   :f64,
+}
 
+pub struct Surface
+{
+    MaterialName    : String,
+    Vertices        : Vec<Vertex>,
+    Indices         : Vec<usize>,
+}
+
+pub struct Model
+{
+    Name        : String,
+    Surfaces    : Vec<Surface>,
+}
+
+impl Model
+{
+    pub fn DebugDisplay(&mut self, theLogFile:&mut myLogFile)
+    {
+        theLogFile.log("Model - DebugDisplay()\n".to_string());
+        let sMessage = format!("ModelName = {}\n", self.Name);
+        theLogFile.log(sMessage);
+                
+        let SurfaceCount =self.Surfaces.len();
+
+        if  SurfaceCount==0 {return;};
+        let mut SurfaceIndex =0;
+        loop 
+        {
+            if SurfaceIndex>= SurfaceCount  {break;}
+            
+            let errorMessage = format!("Could't get thisSurface {}", SurfaceIndex);
+            let thisSurface:&Surface = self.Surfaces.get(SurfaceIndex).expect(&errorMessage);
+            let thisSurfaceMaterialName = thisSurface.MaterialName.clone();
+
+            let sMessage = format!("Surface[{}] materialName = ", SurfaceIndex);
+            theLogFile.log(sMessage);
+            theLogFile.log(thisSurfaceMaterialName);
+            
+            let VerticesCount   = thisSurface.Vertices.len();
+            let IndicesCount    = thisSurface.Indices.len();
+            
+            theLogFile.log(", iNumberOfVertices = ".to_string());
+            theLogFile.log(VerticesCount.to_string());
+            theLogFile.log(", dNumberOfIndices = ".to_string());
+            theLogFile.log(IndicesCount.to_string());
+
+            theLogFile.log("\n".to_string());
+            SurfaceIndex += 1;
+        }
+    }
+}
 pub struct mapProcFile
 {
     //logFile       :myLogFile,
@@ -96,7 +157,7 @@ impl mapProcFile
         
         let ucBuffer          = fs::read(fileName).expect("Can't read file");
         let bufferSize          = ucBuffer.len();
-        
+
         let ourFile = mapProcFile
         {
             //pathProcFile  : fileName.to_string(),
@@ -148,57 +209,115 @@ impl mapProcFile
         }
     }
 
-    pub fn extractModelBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize)
+    pub fn extractModelBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize) -> Model
     {
             let mut uiOffset = uiStart;
+            let mut SurfaceList:Vec<Surface> = Vec::new();
 
             //println!("extractModelBlock");
-            theLogFile.log("extractModelBlock ".to_string());
+            //theLogFile.log("extractModelBlock ".to_string());
             //theLogFile.log(sBlock.to_string());
 
             let sName = self.getNextString(uiOffset, uiStop);
-            theLogFile.log(sName.0.to_string());
+            //theLogFile.log(sName.0.to_string());
             uiOffset = sName.1;
 
             //theLogFile.log("\n".to_string());
-            theLogFile.log(", numSurfaces = ".to_string());
+            //theLogFile.log(", numSurfaces = ".to_string());
 
             let dNumSurfaces = self.getNextNumber(uiOffset, uiStop);
             let iNumberOfSurfaces = dNumSurfaces.0 as usize;
             uiOffset = dNumSurfaces.1;
 
-            theLogFile.log(dNumSurfaces.0.to_string());
+            //theLogFile.log(dNumSurfaces.0.to_string());
             //theLogFile.log("\nSurfaces :\n".to_string());
-            theLogFile.log("\n".to_string());
+            //theLogFile.log("\n".to_string());
 
             let mut uiSurfaceLoopIndex =0;
-            if iNumberOfSurfaces==0  {return;}
+            if iNumberOfSurfaces==0  
+            {
+                let thisModel = Model
+                {
+                    Name            : sName.0,
+                    Surfaces        : SurfaceList,
+                };
+    
+                return thisModel;
+            }
+
             loop 
             {
+                
                 let sSurfaceName = self.getNextString(uiOffset, uiStop);
-                let sMessage = format!("Surface[{}] materialName = ", uiSurfaceLoopIndex);
-                theLogFile.log(sMessage);
-                theLogFile.log(sSurfaceName.0.to_string());
+                //let sMessage = format!("Surface[{}] materialName = ", uiSurfaceLoopIndex);
+                //theLogFile.log(sMessage);
+                //theLogFile.log(sSurfaceName.0.to_string());
                 uiOffset = sSurfaceName.1;
 
                 let dNumVerts = self.getNextNumber(uiOffset, uiStop);
                 let iNumberOfVertices = dNumVerts.0 as usize;
-                theLogFile.log(", iNumberOfVertices = ".to_string());
-                theLogFile.log(iNumberOfVertices.to_string());
+                //theLogFile.log(", iNumberOfVertices = ".to_string());
+                //theLogFile.log(iNumberOfVertices.to_string());
                 uiOffset = dNumVerts.1;
     
                 let dNumIndexes = self.getNextNumber(uiOffset, uiStop);
                 let iNumberOfIndices = dNumIndexes.0 as usize;
-                theLogFile.log(", dNumberOfIndices = ".to_string());
-                theLogFile.log(iNumberOfIndices.to_string());
+                //theLogFile.log(", dNumberOfIndices = ".to_string());
+                //theLogFile.log(iNumberOfIndices.to_string());
                 uiOffset = dNumIndexes.1;
-                theLogFile.log("\n".to_string());
+                //theLogFile.log("\n".to_string());
+
+                let mut theVertices:Vec<Vertex> = Vec::new();
+                let mut theIndices:Vec<usize>   = Vec::new();
 
                 if iNumberOfVertices>0
                 {
                     let mut iNumberOfVerticesLoopCounter =0;
                     loop 
                     {
+
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dx = coord.0;
+                        uiOffset = coord.1;
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dy = coord.0;
+                        uiOffset = coord.1;
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dz = coord.0;
+                        uiOffset = coord.1;
+
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dnx = coord.0;
+                        uiOffset = coord.1;
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dny = coord.0;
+                        uiOffset = coord.1;
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dnz = coord.0;
+                        uiOffset = coord.1;
+
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let ds = coord.0;
+                        uiOffset = coord.1;
+                        let coord = self.getNextNumber(uiOffset, uiStop);
+                        let dt = coord.0;
+                        uiOffset = coord.1;
+
+                        let vert:Vertex = Vertex
+                        {
+                            x       :dx,
+                            y       :dy,
+                            z       :dz,
+
+                            nx      :dnx,
+                            ny      :dny,
+                            nz      :dnz,
+
+                            s       :ds,
+                            t       :dt,
+                        };
+
+                        /*/
                         for i in 0..8
                         {
                             let coord = self.getNextNumber(uiOffset, uiStop);
@@ -207,7 +326,10 @@ impl mapProcFile
                             theLogFile.log(" ".to_string());
                             uiOffset = coord.1;
                         }
-                        theLogFile.log("\n".to_string());
+                        */
+                        theVertices.push(vert);
+
+                        //theLogFile.log("\n".to_string());
 
                         iNumberOfVerticesLoopCounter+=1;
                         if iNumberOfVerticesLoopCounter>=iNumberOfVertices    {break;};
@@ -220,23 +342,42 @@ impl mapProcFile
                     loop 
                     {
                         let id = self.getNextNumber(uiOffset, uiStop);
-                        if iNumberOfIndicesLoopCounter!=0 {theLogFile.log(",".to_string());}
-                        theLogFile.log(id.0.to_string());
-                        theLogFile.log(" ".to_string());
+                        //if iNumberOfIndicesLoopCounter!=0 {theLogFile.log(",".to_string());}
+                        //theLogFile.log(id.0.to_string());
+                        //theLogFile.log(" ".to_string());
                         uiOffset = id.1;
 
+                        theIndices.push(id.0 as usize);
                         iNumberOfIndicesLoopCounter+=1;
                         if iNumberOfIndicesLoopCounter>=iNumberOfIndices    {break;};
                     }
-                    theLogFile.log("\n".to_string());
+                    //theLogFile.log("\n".to_string());
 
                 }
 
-                theLogFile.log("\n".to_string());
+                let thisSurface = Surface
+                {
+                    MaterialName    : sSurfaceName.0.to_string(),
+                    Vertices        : theVertices,
+                    Indices         : theIndices,
+                };
+                
+                SurfaceList.push(thisSurface);
+
+                //theLogFile.log("\n".to_string());
                 uiSurfaceLoopIndex += 1;
 
                 if uiSurfaceLoopIndex>=iNumberOfSurfaces    {break;};     
             };
+
+            let thisModel = Model
+            {
+                Surfaces            : SurfaceList,
+                Name                : sName.0,
+            };
+
+            //theLogFile.log("\n".to_string());
+            thisModel
     }
 
     pub fn extractInterreaPortalsBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize)
@@ -284,6 +425,8 @@ impl mapProcFile
     {
         self.checkFirstLine(theLogFile);
 
+        let ModelList:Vec<Model> = Vec::new();
+
         loop
         {
             let sBlockName = self.getNextBlockName();
@@ -299,7 +442,10 @@ impl mapProcFile
 
             match &sBlockName as &str 
             {
-                "model"             =>  self.extractModelBlock(theLogFile, sBlockData.0, sBlockData.1),
+                "model"             =>  {   
+                                            let mut thisModel = self.extractModelBlock(theLogFile, sBlockData.0, sBlockData.1);
+                                            thisModel.DebugDisplay(theLogFile);
+                                        },
                 "interreaPortals"   =>  self.extractInterreaPortalsBlock(theLogFile, sBlockData.0, sBlockData.1),       //{self.logFile.log("ToDo :: extract interreaPortals\n".to_string());     /*println!("ToDo :: extract interreaPortals");   fs::write("log.txt", "ToDo :: extract interreaPortals") .expect("Could not write to log file");*/ },
                 "nodes"             =>  self.extractNodesBlock(theLogFile, sBlockData.0, sBlockData.1),                 //{self.logFile.log("ToDo :: extract nodes\n".to_string());               /*println!("ToDo :: extract nodes");             fs::write("log.txt", "ToDo :: extract nodes") .expect("Could not write to log file");*/ },
                 "shadowModel"       =>  self.extractShadowModelBlock(theLogFile, sBlockData.0, sBlockData.1),           //{self.logFile.log("ToDo :: extract shadowModel\n".to_string());         /*println!("ToDo :: extract shadowModel");       fs::write("log.txt", "ToDo :: extract shadowModel") .expect("Could not write to log file");*/ },
