@@ -122,16 +122,36 @@ impl Model
             let sMessage = format!("Surface[{}] materialName = ", SurfaceIndex);
             theLogFile.log(sMessage);
             theLogFile.log(thisSurfaceMaterialName);
-            
+            theLogFile.log("\n".to_string());
+
             let VerticesCount   = thisSurface.Vertices.len();
             let IndicesCount    = thisSurface.Indices.len();
             
-            theLogFile.log(", iNumberOfVertices = ".to_string());
+            theLogFile.log("iNumberOfVertices = ".to_string());
             theLogFile.log(VerticesCount.to_string());
-            theLogFile.log(", dNumberOfIndices = ".to_string());
-            theLogFile.log(IndicesCount.to_string());
-
             theLogFile.log("\n".to_string());
+
+            let VexList:&Vec<Vertex> = &thisSurface.Vertices;
+            for (i,vex) in VexList.into_iter().enumerate()
+            {
+                let sMessage = format!("[{:4}] {:8.2} {:8.2} {:8.2} {:8.2} {:8.2} {:8.2} {:8.2} {:8.2}\n", i, vex.x, vex.y, vex.z, vex.nx, vex.ny, vex.nz, vex.s, vex.t);
+                theLogFile.log(sMessage);
+            }
+
+            theLogFile.log("dNumberOfIndices = ".to_string());
+            theLogFile.log(IndicesCount.to_string());
+            theLogFile.log("\n".to_string());
+
+            let IndexList:&Vec<usize> = &thisSurface.Indices;
+            //for index in IndexList.into_iter()
+            for (i, index) in IndexList.into_iter().enumerate()
+            {
+                let sMessage = format!("{:3} ", index);
+                theLogFile.log(sMessage);
+                if (i+1)%16 == 0 {theLogFile.log("\n".to_string());};
+            }
+            theLogFile.log("\n".to_string());
+
             SurfaceIndex += 1;
         }
     }
