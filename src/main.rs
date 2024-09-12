@@ -12,24 +12,23 @@ use crate::logfile::myLogFile;
 use crate::proc::mapProcFile;
 use crate::mtr::mtrFile;
 use crate::welcome::welcomeBanner;
+use crate::scene::Scene;
 
 pub mod logfile;
 pub mod proc;
 pub mod mtr;
 pub mod hexadump;
 pub mod welcome;
+pub mod scene;
 
 fn main() 
 {
-    let mut logFile = myLogFile::open();
-    //logFile.log("sMessageToLog\n".to_string());
-    //logFile.log("sMessageToLog\n".to_string());
+    let mut theLogFile = myLogFile::open();
+    welcomeBanner::welcomeBanner(&mut theLogFile);
 
-    welcomeBanner::welcomeBanner(&mut logFile);
-    let mut ourProcFile = mapProcFile::open(&mut logFile, "maps\\admin.proc");
+    let mut ourScene = Scene::open(&mut theLogFile, "admin");
 
-    ourProcFile.extractData(&mut logFile);    
-    let mut ourMtfFile = mtrFile::open(&mut logFile, "materials\\base_floor.mtr");
+    let mut ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
     return;
     
 }
