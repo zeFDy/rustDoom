@@ -26,6 +26,7 @@ fn main()
     let mut theLogFile = myLogFile::open();
     welcomeBanner::welcomeBanner(&mut theLogFile);
 
+
     let mut ourScene = Scene::open(&mut theLogFile, "admin");
 
     let mut ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
