@@ -16,6 +16,7 @@ use crate::scene::Scene;
 
 use std::error::Error;
 use std::io::{self, Read};
+use std::fs::DirEntry;
 use std::path::Path;
 use zip::ZipArchive;
 
@@ -45,49 +46,92 @@ fn main()
     let mut theLogFile = myLogFile::open();
     welcomeBanner::welcomeBanner(&mut theLogFile);
 
-    // ----- essai fichier zip ----- 
-    let zip_file_path = Path::new("PeachCompiler-EndOfParser.zip");
-    let zip_file = File::open(zip_file_path).expect("file error");
 
-    let mut archive = ZipArchive::new(zip_file).expect("file error");
-    // let extraction_dir = Path::new("extracted_files");
+    let mut entries = fs::read_dir(".").expect("io error");
 
-    // // Create the directory if it does not exist.
-    // if !extraction_dir.exists() {
-    //     std::fs::create_dir(extraction_dir)?;
-    // }
+    for entry in entries
+    {
+        let entry = entry.expect("io error");
+        let path = entry.path();
+        println!("{:#?}", path);
 
-    // Iterate through the files in the ZIP archive.
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i).expect("file error");
-        let file_name = file.name().to_owned();
-
-        let sMessage = format!("-----\nNEXT FILE is {}\n", file_name);
+        let sMessage = format!("path is {:#?}\n", path);
+        theLogFile.log(sMessage);
+        
+        let sPath = path.display().to_string();
+        let sMessage = format!("sPath is {}\n", sPath);
         theLogFile.log(sMessage);
 
-        // Create the path to the extracted file in the destination directory.
-        // let target_path = extraction_dir.join(file_name);
+        if(sPath.ends_with(".pk4"))
+        {
+            // ----- essai fichier zip ----- 
+            let zip_file_path = Path::new(&sPath);
+            let zip_file = File::open(zip_file_path).expect("file error");
 
-        // // Create the destination directory if it does not exist.
-        // if let Some(parent_dir) = target_path.parent() {
-        //     std::fs::create_dir_all(parent_dir)?;
-        // }
+            let mut archive = ZipArchive::new(zip_file).expect("file error");
 
-        // let mut output_file = File::create(&target_path)?;
+            // Iterate through the files in the ZIP archive.
+            for i in 0..archive.len() {
+                let mut file = archive.by_index(i).expect("file error");
+                let fileName = file.name().to_owned();
 
-        // // Read the contents of the file from the ZIP archive and write them to the destination file.
-        // io::copy(&mut file, &mut output_file)?;
-        let mut _thisString:String = "".to_string();
-        file.read_to_string(&mut _thisString);
-        theLogFile.log(_thisString);
+                //let sMessage = format!("-----\nNEXT FILE is {}\n", fileName);
+                
+                if fileName.ends_with(".proc")          
+                {
+                    theLogFile.log(" -> PROC File".to_string());
+                }
+                else if fileName.ends_with(".map")      
+                {
+                    theLogFile.log(" -> MAP  File".to_string());
+                }
+                else if fileName.ends_with(".mtr")      
+                {
+                    theLogFile.log(" -> MTR  File".to_string());
+                }
+                else if fileName.ends_with(".tga")      
+                {
+                    theLogFile.log(" -> TGA  File".to_string());
+                }
+                else
+                {
+                    theLogFile.log(" ->      File".to_string());
+                }
 
-        theLogFile.log("-----\n".to_string());
+                let sMessage = format!(" is {}", fileName);
+                theLogFile.log(sMessage);
+
+                theLogFile.log("\n".to_string());
+
+                // Create the path to the extracted file in the destination directory.
+                // let target_path = extraction_dir.join(file_name);
+
+                // // Create the destination directory if it does not exist.
+                // if let Some(parent_dir) = target_path.parent() {
+                //     std::fs::create_dir_all(parent_dir)?;
+                // }
+
+                // let mut output_file = File::create(&target_path)?;
+
+                // // Read the contents of the file from the ZIP archive and write them to the destination file.
+                // io::copy(&mut file, &mut output_file)?;
+                
+                //let mut _thisString:String = "".to_string();
+                //file.read_to_string(&mut _thisString);
+                //theLogFile.log(_thisString);
+
+                //theLogFile.log("-----\n".to_string());
+
+            }
+
+            //println!("Files successfully extracted to {:?}", extraction_dir);
+
+            // ----- fin essai fichier zip ----- 
+
+        }
 
     }
 
-    //println!("Files successfully extracted to {:?}", extraction_dir);
-
-    // ----- fin essai fichier zip ----- 
     
 
     
