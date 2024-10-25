@@ -93,6 +93,18 @@ fn main()
                 {
                     theLogFile.log(" -> TGA  File".to_string());
                 }
+                else if fileName.ends_with(".dds")      
+                {
+                    theLogFile.log(" -> DDS  File".to_string());
+                }
+                else if fileName.ends_with(".ogg")      
+                {
+                    theLogFile.log(" -> OGG  File".to_string());
+                }
+                else if fileName.ends_with(".wav")      
+                {
+                    theLogFile.log(" -> WAV  File".to_string());
+                }
                 else
                 {
                     theLogFile.log(" ->      File".to_string());
