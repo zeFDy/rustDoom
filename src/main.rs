@@ -27,22 +27,86 @@ pub mod hexadump;
 pub mod welcome;
 pub mod scene;
 
-// use std::io::prelude::*;
-// fn list_zip_contents(reader: impl Read + Seek) -> zip::result::ZipResult<()> {
-//     use zip::HasZipMetadata;
-//     let mut zip = zip::ZipArchive::new(reader)?;
 
-//     for i in 0..zip.len() {
-//         let mut file = zip.by_index(i)?;
-//         println!("Filename: {}", file.name());
-//         //std::io::copy(&mut file, &mut std::io::stdout())?;
-//     }
+// Log Options for test/debug
+const LOG_FILENAME_FROM_ZIP_ARCHIVE :bool = false;       
+const LOG_MTR_FILE_CONTENT          :bool = false;       
+const LOG_MTR_FILELIST              :bool = false;
+const LOG_MAP_FILELIST              :bool = false;
+const LOG_PROC_FILELIST             :bool = true;
+const LOG_MODEL_DETAILS             :bool = false;
 
-//     Ok(())
-// }
+
+struct  pakFileInfo
+{
+        sFileName       : String,
+        sPakFileName    : String,
+        archiveIndex    : usize,
+}
+
+fn logPakFileInfoList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<pakFileInfo>)
+{
+    let sMessage = format!("\n{}\n", sMessage);
+    ourLogFile.log(sMessage);
+
+    let listSize = thisList.len();
+    let mut iCounter: usize =0;
+    loop
+    {
+        if iCounter>=listSize    {break;}
+        
+        let thisEntry = thisList.get(iCounter).expect("out of range");
+        let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
+        ourLogFile.log(sMessage);
+
+        iCounter += 1;
+
+    }
+}
+
+fn logStringList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<String>)
+{
+    let sMessage = format!("\nDump mtrFilesContent\n");
+    ourLogFile.log(sMessage);
+
+    let listSize = thisList.len();
+    let mut iCounter: usize =0;
+    loop
+    {
+        if iCounter>=listSize    {break;}
+        
+        let thisEntry = thisList.get(iCounter).expect("out of range");
+        let sMessage = format!("{}\n", thisEntry);
+        ourLogFile.log(sMessage);
+
+        iCounter += 1;
+
+    }
+}
+
+fn newPakFileInfoItem (fileName:&String, zipFilePath:&Path, iIndex:usize) -> pakFileInfo
+{
+    let thisFileInfo = pakFileInfo 
+    {
+        sFileName       : fileName.clone(),
+        sPakFileName    : zipFilePath.display().to_string(),
+        archiveIndex    : iIndex,
+    };
+
+    thisFileInfo
+}
 
 fn main() 
 {
+    let mut procFilesInfoList:  Vec<pakFileInfo>    = Vec::new();
+    let mut mapFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut mtrFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut tgaFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut ddsFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut wavFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut oggFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+    let mut mtrFilesContent:    Vec<String>         = Vec::new();
+
     let mut theLogFile = myLogFile::open();
     welcomeBanner::welcomeBanner(&mut theLogFile);
 
@@ -55,20 +119,20 @@ fn main()
         let path = entry.path();
         println!("{:#?}", path);
 
-        let sMessage = format!("path is {:#?}\n", path);
-        theLogFile.log(sMessage);
+        //let sMessage = format!("path is {:#?}\n", path);
+        //theLogFile.log(sMessage);
         
         let sPath = path.display().to_string();
-        let sMessage = format!("sPath is {}\n", sPath);
-        theLogFile.log(sMessage);
+        //let sMessage = format!("sPath is {}\n", sPath);
+        //theLogFile.log(sMessage);
 
         if(sPath.ends_with(".pk4"))
         {
             // ----- essai fichier zip ----- 
-            let zip_file_path = Path::new(&sPath);
-            let zip_file = File::open(zip_file_path).expect("file error");
+            let zipFilePath = Path::new(&sPath);
+            let zipFile = File::open(zipFilePath).expect("file error");
 
-            let mut archive = ZipArchive::new(zip_file).expect("file error");
+            let mut archive = ZipArchive::new(zipFile).expect("file error");
 
             // Iterate through the files in the ZIP archive.
             for i in 0..archive.len() {
@@ -79,41 +143,56 @@ fn main()
                 
                 if fileName.ends_with(".proc")          
                 {
-                    theLogFile.log(" -> PROC File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> PROC File".to_string());}
+                    procFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
                 }
                 else if fileName.ends_with(".map")      
                 {
-                    theLogFile.log(" -> MAP  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MAP  File".to_string());}
+                    mapFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
                 }
                 else if fileName.ends_with(".mtr")      
                 {
-                    theLogFile.log(" -> MTR  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MTR  File".to_string());}
+                    mtrFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
+
+                    let mut thisString:String = "".to_string();
+                    file.read_to_string(&mut thisString).expect("io error");
+                    mtrFilesContent.push(thisString);
                 }
                 else if fileName.ends_with(".tga")      
                 {
-                    theLogFile.log(" -> TGA  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> TGA  File".to_string());}
+
+                    /*/
+                    let mut readBuffer = Vec::new();
+                    file.read_to_end(&mut readBuffer);
+                    */
                 }
                 else if fileName.ends_with(".dds")      
                 {
-                    theLogFile.log(" -> DDS  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> DDS  File".to_string());}
                 }
                 else if fileName.ends_with(".ogg")      
                 {
-                    theLogFile.log(" -> OGG  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> OGG  File".to_string());}
                 }
                 else if fileName.ends_with(".wav")      
                 {
-                    theLogFile.log(" -> WAV  File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> WAV  File".to_string());}
                 }
                 else
                 {
-                    theLogFile.log(" ->      File".to_string());
+                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" ->      File".to_string());}
                 }
 
-                let sMessage = format!(" is {}", fileName);
-                theLogFile.log(sMessage);
+                if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true
+                {
+                    let sMessage = format!(" is {}", &fileName);
+                    theLogFile.log(sMessage);
 
-                theLogFile.log("\n".to_string());
+                    theLogFile.log("\n".to_string());
+                }
 
                 // Create the path to the extracted file in the destination directory.
                 // let target_path = extraction_dir.join(file_name);
@@ -144,9 +223,35 @@ fn main()
 
     }
 
-    
+    if LOG_PROC_FILELIST == true
+    {
+        logPakFileInfoList(     &mut theLogFile, 
+                                &"Dump procFilesInfoList".to_string(), 
+                                &procFilesInfoList);
+    }
 
-    
+    if LOG_MAP_FILELIST == true
+    {
+        logPakFileInfoList(     &mut theLogFile, 
+                                &"Dump mapFilesInfoList".to_string(), 
+                                &mapFilesInfoList);
+    }
+
+    if  LOG_MTR_FILELIST == true
+    {
+        logPakFileInfoList(     &mut theLogFile, 
+                                &"Dump mtrFilesInfoList".to_string(), 
+                                &mtrFilesInfoList);
+    }
+
+    if  LOG_MTR_FILE_CONTENT == true
+    {
+        logStringList(  &mut theLogFile,  
+                        &"Dump mtrFilesContent".to_string(),
+                        &mtrFilesContent);
+    }
+
+
     let mut ourScene = Scene::open(&mut theLogFile, "admin");
 
     let mut ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");

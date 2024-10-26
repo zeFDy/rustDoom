@@ -7,7 +7,7 @@ use colored::Colorize;
 use std::process::exit;
 use fs::File;
 use chrono::{DateTime, Utc};
-use crate::logfile::myLogFile;
+use crate::{logfile::myLogFile, LOG_MODEL_DETAILS};
 
 
 pub struct Vertex
@@ -340,21 +340,21 @@ impl mapProcFile
     pub fn extractInterreaPortalsBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize)
     {
             //println!("extractModelBlock");
-            theLogFile.log("extractInterreaPortalsBlock\n".to_string());
+            //theLogFile.log("extractInterreaPortalsBlock\n".to_string());
             //theLogFile.log(sBlock.to_string());
     }
 
     pub fn extractNodesBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize)
     {
             //println!("extractModelBlock");
-            theLogFile.log("extractModelBlock\n".to_string());
+            //theLogFile.log("extractModelBlock\n".to_string());
             //theLogFile.log(sBlock.to_string());
     }
 
     pub fn extractShadowModelBlock(&mut self, theLogFile:&mut myLogFile, uiStart:usize, uiStop:usize)
     {
             //println!("extractModelBlock");
-            theLogFile.log("extractShadowModelBlock\n".to_string());
+            //theLogFile.log("extractShadowModelBlock\n".to_string());
             //theLogFile.log(sBlock.to_string());
     }
 
@@ -401,7 +401,7 @@ impl mapProcFile
             {
                 "model"             =>  {   
                                             let mut thisModel = self.extractModelBlock(theLogFile, sBlockData.0, sBlockData.1);
-                                            thisModel.DebugDisplay(theLogFile);
+                                            if LOG_MODEL_DETAILS == true {thisModel.DebugDisplay(theLogFile);}
                                         },
                 "interreaPortals"   =>  self.extractInterreaPortalsBlock(theLogFile, sBlockData.0, sBlockData.1),       //{self.logFile.log("ToDo :: extract interreaPortals\n".to_string());     /*println!("ToDo :: extract interreaPortals");   fs::write("log.txt", "ToDo :: extract interreaPortals") .expect("Could not write to log file");*/ },
                 "nodes"             =>  self.extractNodesBlock(theLogFile, sBlockData.0, sBlockData.1),                 //{self.logFile.log("ToDo :: extract nodes\n".to_string());               /*println!("ToDo :: extract nodes");             fs::write("log.txt", "ToDo :: extract nodes") .expect("Could not write to log file");*/ },
