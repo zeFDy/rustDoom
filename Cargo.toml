@@ -1,9 +1,8 @@
-[package]
-name = "rustDoom"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "2"
 
-[dependencies]
-colored ="2.1.0"
-chrono ="0.4.38"
-zip = "2.2.0"
+members = [
+    "src",
+    "vulkanalia",
+    "vulkanalia-sys",
+]
