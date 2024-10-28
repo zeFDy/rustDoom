@@ -29,16 +29,16 @@ use winit::window::Window;
 // use vulkanalia::vk::KhrSurfaceExtension;
 use vulkanalia::vk::KhrSwapchainExtension;
 
-use crate::SwapchainSupport;
+use crate::structs::SwapchainSupport;
 // use crate::DEVICE_EXTENSIONS;
-use crate::QueueFamilyIndices;
+use crate::structs::QueueFamilyIndices;
 use crate::AppData;
 
 // use crate::VALIDATION_ENABLED;
 // use crate::VALIDATION_LAYER;
 // use crate::PORTABILITY_MACOS_VERSION;
 
-use crate::create_image_view;
+use crate::sharedImages::create_image_view;
 
 //================================================
 // Swapchain

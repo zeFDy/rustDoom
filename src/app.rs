@@ -50,10 +50,14 @@ use crate::commandPool::create_command_pool;
 use crate::texture::create_texture_image;
 use crate::texture::create_texture_image_view;
 use crate::texture::create_texture_sampler;
-use crate::{create_vertex_buffer, create_index_buffer, create_descriptor_pool};
-use crate::{create_descriptor_sets, create_command_buffers};
-use crate::{create_uniform_buffers, create_sync_objects};
-use crate::UniformBufferObject;
+use crate::buffers::create_vertex_buffer;
+use crate::buffers::create_index_buffer;
+use crate::buffers::create_uniform_buffers;
+use crate::descriptors::create_descriptor_pool;
+use crate::descriptors::create_descriptor_sets;
+use crate::commandBuffers::create_command_buffers;
+use crate::syncObjects::create_sync_objects;
+use crate::structs::UniformBufferObject;
 
 
 use crate::VALIDATION_ENABLED;
@@ -64,7 +68,7 @@ use crate::MAX_FRAMES_IN_FLIGHT;
 
 // use crate::Vec2;
 // use crate::Vec3;
-use crate::Mat4;
+use crate::structs::Mat4;
 
 // type Vec2 = cgmath::Vector2<f32>;
 // type Vec3 = cgmath::Vector3<f32>;

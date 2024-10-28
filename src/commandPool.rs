@@ -2,7 +2,7 @@
 use anyhow::Result;
 use vulkanalia::prelude::v1_0::*;
 use crate::AppData;
-use crate::QueueFamilyIndices;
+use crate::structs::QueueFamilyIndices;
 
 //================================================
 // Command Pool

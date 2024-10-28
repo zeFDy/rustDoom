@@ -28,11 +28,11 @@ use vulkanalia::prelude::v1_0::*;
 //use vulkanalia::vk::KhrSwapchainExtension;
 
 use crate::AppData;
-use crate::create_buffer;
-use crate::create_image;
-use crate::create_image_view;
-use crate::transition_image_layout;
-use crate::copy_buffer_to_image;
+use crate::sharedBuffer::create_buffer;
+use crate::sharedImages::create_image;
+use crate::sharedImages::create_image_view;
+use crate::sharedImages::transition_image_layout;
+use crate::sharedImages::copy_buffer_to_image;
 use stb_image::stb_image;
 
 //================================================

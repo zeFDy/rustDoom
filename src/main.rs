@@ -8,30 +8,20 @@
     clippy::unnecessary_wraps
 )]
 
-// rustDoom
-
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use std::{fs, usize, vec};
-// use std::io::Write;
+// use std::fs;
+use std::usize;
+//use std::vec;
+//use std::io::Write;
 //use colored::Colorize;
 //use std::process::exit;
 //use fs::File;
-// use chrono::{DateTime, Utc};
+//use chrono::{DateTime, Utc};
 
-use crate::logfile::myLogFile;
-//use crate::proc::mapProcFile;
-use crate::mtr::mtrFile;
-use crate::welcome::welcomeBanner;
-use crate::scene::Scene;
 
-//use std::error::Error;
-//use std::io::{self, Read};
-//use std::fs::DirEntry;
-use std::path::Path;
-use zip::ZipArchive;
 
 pub mod logfile;
 pub mod proc;
@@ -48,6 +38,15 @@ pub mod pipeline;
 pub mod frameBuffers;
 pub mod commandPool;
 pub mod texture;
+pub mod buffers;
+pub mod descriptors;
+pub mod sharedBuffer;
+pub mod commandBuffers;
+pub mod syncObjects;
+pub mod sharedImages;
+pub mod sharedOther;
+pub mod structs;
+pub mod rustDoom;
 
 use app::{App, AppData};
 // use stb_image::stb_image;
@@ -56,14 +55,15 @@ use app::{App, AppData};
 
 //use std::collections::HashSet;
 //use std::ffi::{CStr, CString};
-use std::fs::File;
-use std::io::Read;
-use std::mem::size_of;
+// use std::fs::File;
+// use std::io::Read;
+// use std::mem::size_of;
 //use std::os::raw::c_void;
 use std::ptr::copy_nonoverlapping as memcpy;
 //use std::time::Instant;
 
-use anyhow::{anyhow, Result};
+//use anyhow::{anyhow, Result};
+use anyhow::Result;
 use cgmath::{vec2, vec3};
 // use cgmath::{point3, Deg};
 //use log::*;
@@ -78,12 +78,13 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 // use winit::window::Window;
 use winit::window::WindowBuilder;
+use crate::structs::Vertex;
 
 //use vulkanalia::vk::ExtDebugUtilsExtension;
-use vulkanalia::vk::KhrSurfaceExtension;
+// use vulkanalia::vk::KhrSurfaceExtension;
 //use vulkanalia::vk::KhrSwapchainExtension;
 
-use crate::physicalDevice::SuitabilityError;
+// use crate::physicalDevice::SuitabilityError;
      
 /// Whether the validation layers should be enabled.
 const VALIDATION_ENABLED: bool = false /*cfg!(debug_assertions)*/;
@@ -98,251 +99,251 @@ const PORTABILITY_MACOS_VERSION: Version = Version::new(1, 3, 216);
 /// The maximum number of frames that can be processed concurrently.
 const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
-type Vec2 = cgmath::Vector2<f32>;
-type Vec3 = cgmath::Vector3<f32>;
-type Mat4 = cgmath::Matrix4<f32>;
+// type Vec2 = cgmath::Vector2<f32>;
+// type Vec3 = cgmath::Vector3<f32>;
+// type Mat4 = cgmath::Matrix4<f32>;
 
 
 
-// rustDoom
+// // rustDoom
 
-// Log Options for test/debug
-const LOG_FILENAME_FROM_ZIP_ARCHIVE :bool = false;       
-const LOG_MTR_FILE_CONTENT          :bool = false;       
-const LOG_MTR_FILELIST              :bool = false;
-const LOG_MAP_FILELIST              :bool = false;
-const LOG_PROC_FILELIST             :bool = true;
-const LOG_TGA_FILELIST              :bool = true;
-const LOG_MODEL_DETAILS             :bool = false;
+// // Log Options for test/debug
+// const LOG_FILENAME_FROM_ZIP_ARCHIVE :bool = false;       
+// const LOG_MTR_FILE_CONTENT          :bool = false;       
+// const LOG_MTR_FILELIST              :bool = false;
+// const LOG_MAP_FILELIST              :bool = false;
+// const LOG_PROC_FILELIST             :bool = true;
+// const LOG_TGA_FILELIST              :bool = true;
+// const LOG_MODEL_DETAILS             :bool = false;
 
 
-struct  pakFileInfo
-{
-        sFileName       : String,
-        sPakFileName    : String,
-        archiveIndex    : usize,
-}
+// struct  pakFileInfo
+// {
+//         sFileName       : String,
+//         sPakFileName    : String,
+//         archiveIndex    : usize,
+// }
 
-fn logPakFileInfoList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<pakFileInfo>)
-{
-    let sMessage = format!("\n{}\n", sMessage);
-    ourLogFile.log(sMessage);
+// fn logPakFileInfoList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<pakFileInfo>)
+// {
+//     let sMessage = format!("\n{}\n", sMessage);
+//     ourLogFile.log(sMessage);
 
-    let listSize = thisList.len();
-    let mut iCounter: usize =0;
-    loop
-    {
-        if iCounter>=listSize    {break;}
+//     let listSize = thisList.len();
+//     let mut iCounter: usize =0;
+//     loop
+//     {
+//         if iCounter>=listSize    {break;}
         
-        let thisEntry = thisList.get(iCounter).expect("out of range");
-        let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
-        ourLogFile.log(sMessage);
+//         let thisEntry = thisList.get(iCounter).expect("out of range");
+//         let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
+//         ourLogFile.log(sMessage);
 
-        iCounter += 1;
+//         iCounter += 1;
 
-    }
-}
+//     }
+// }
 
-fn logStringList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<String>)
-{
-    let sMessage = format!("\nDump mtrFilesContent\n");
-    ourLogFile.log(sMessage);
+// fn logStringList(ourLogFile:&mut myLogFile, sMessage:&String, thisList:&Vec<String>)
+// {
+//     let sMessage = format!("\nDump mtrFilesContent\n");
+//     ourLogFile.log(sMessage);
 
-    let listSize = thisList.len();
-    let mut iCounter: usize =0;
-    loop
-    {
-        if iCounter>=listSize    {break;}
+//     let listSize = thisList.len();
+//     let mut iCounter: usize =0;
+//     loop
+//     {
+//         if iCounter>=listSize    {break;}
         
-        let thisEntry = thisList.get(iCounter).expect("out of range");
-        let sMessage = format!("{}\n", thisEntry);
-        ourLogFile.log(sMessage);
+//         let thisEntry = thisList.get(iCounter).expect("out of range");
+//         let sMessage = format!("{}\n", thisEntry);
+//         ourLogFile.log(sMessage);
 
-        iCounter += 1;
+//         iCounter += 1;
 
-    }
-}
+//     }
+// }
 
-fn newPakFileInfoItem (fileName:&String, zipFilePath:&Path, iIndex:usize) -> pakFileInfo
-{
-    let thisFileInfo = pakFileInfo 
-    {
-        sFileName       : fileName.clone(),
-        sPakFileName    : zipFilePath.display().to_string(),
-        archiveIndex    : iIndex,
-    };
+// fn newPakFileInfoItem (fileName:&String, zipFilePath:&Path, iIndex:usize) -> pakFileInfo
+// {
+//     let thisFileInfo = pakFileInfo 
+//     {
+//         sFileName       : fileName.clone(),
+//         sPakFileName    : zipFilePath.display().to_string(),
+//         archiveIndex    : iIndex,
+//     };
 
-    thisFileInfo
-}
+//     thisFileInfo
+// }
 
-fn mainRustDoom() 
-{
-    let mut procFilesInfoList:  Vec<pakFileInfo>    = Vec::new();
-    let mut mapFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    let mut mtrFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    let mut tgaFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    // let mut ddsFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    // let mut wavFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    // let mut oggFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
-    let mut mtrFilesContent:    Vec<String>         = Vec::new();
+// fn mainRustDoom() 
+// {
+//     let mut procFilesInfoList:  Vec<pakFileInfo>    = Vec::new();
+//     let mut mapFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     let mut mtrFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     let mut tgaFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     // let mut ddsFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     // let mut wavFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     // let mut oggFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
+//     let mut mtrFilesContent:    Vec<String>         = Vec::new();
 
-    let mut theLogFile = myLogFile::open();
-    welcomeBanner::welcomeBanner(&mut theLogFile);
+//     let mut theLogFile = myLogFile::open();
+//     welcomeBanner::welcomeBanner(&mut theLogFile);
 
 
-    let entries = fs::read_dir(".").expect("io error");
+//     let entries = fs::read_dir(".").expect("io error");
 
-    for entry in entries
-    {
-        let entry = entry.expect("io error");
-        let path = entry.path();
-        println!("{:#?}", path);
+//     for entry in entries
+//     {
+//         let entry = entry.expect("io error");
+//         let path = entry.path();
+//         println!("{:#?}", path);
 
-        //let sMessage = format!("path is {:#?}\n", path);
-        //theLogFile.log(sMessage);
+//         //let sMessage = format!("path is {:#?}\n", path);
+//         //theLogFile.log(sMessage);
         
-        let sPath = path.display().to_string();
-        //let sMessage = format!("sPath is {}\n", sPath);
-        //theLogFile.log(sMessage);
+//         let sPath = path.display().to_string();
+//         //let sMessage = format!("sPath is {}\n", sPath);
+//         //theLogFile.log(sMessage);
 
-        if sPath.ends_with(".pk4")
-        {
-            // ----- essai fichier zip ----- 
-            let zipFilePath = Path::new(&sPath);
-            let zipFile = File::open(zipFilePath).expect("file error");
+//         if sPath.ends_with(".pk4")
+//         {
+//             // ----- essai fichier zip ----- 
+//             let zipFilePath = Path::new(&sPath);
+//             let zipFile = File::open(zipFilePath).expect("file error");
 
-            let mut archive = ZipArchive::new(zipFile).expect("file error");
+//             let mut archive = ZipArchive::new(zipFile).expect("file error");
 
-            // Iterate through the files in the ZIP archive.
-            for i in 0..archive.len() {
-                let mut file = archive.by_index(i).expect("file error");
-                let fileName = file.name().to_owned();
+//             // Iterate through the files in the ZIP archive.
+//             for i in 0..archive.len() {
+//                 let mut file = archive.by_index(i).expect("file error");
+//                 let fileName = file.name().to_owned();
 
-                //let sMessage = format!("-----\nNEXT FILE is {}\n", fileName);
+//                 //let sMessage = format!("-----\nNEXT FILE is {}\n", fileName);
                 
-                if fileName.ends_with(".proc")          
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> PROC File".to_string());}
-                    procFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
-                }
-                else if fileName.ends_with(".map")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MAP  File".to_string());}
-                    mapFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
-                }
-                else if fileName.ends_with(".mtr")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MTR  File".to_string());}
-                    mtrFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
+//                 if fileName.ends_with(".proc")          
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> PROC File".to_string());}
+//                     procFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
+//                 }
+//                 else if fileName.ends_with(".map")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MAP  File".to_string());}
+//                     mapFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
+//                 }
+//                 else if fileName.ends_with(".mtr")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> MTR  File".to_string());}
+//                     mtrFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
 
-                    let mut thisString:String = "".to_string();
-                    file.read_to_string(&mut thisString).expect("io error");
-                    mtrFilesContent.push(thisString);
-                }
-                else if fileName.ends_with(".tga")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> TGA  File".to_string());}
-                    tgaFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
-                    /*/
-                    let mut readBuffer = Vec::new();
-                    file.read_to_end(&mut readBuffer);
-                    */
-                }
-                else if fileName.ends_with(".dds")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> DDS  File".to_string());}
-                }
-                else if fileName.ends_with(".ogg")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> OGG  File".to_string());}
-                }
-                else if fileName.ends_with(".wav")      
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> WAV  File".to_string());}
-                }
-                else
-                {
-                    if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" ->      File".to_string());}
-                }
+//                     let mut thisString:String = "".to_string();
+//                     file.read_to_string(&mut thisString).expect("io error");
+//                     mtrFilesContent.push(thisString);
+//                 }
+//                 else if fileName.ends_with(".tga")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> TGA  File".to_string());}
+//                     tgaFilesInfoList.push(newPakFileInfoItem(&fileName, zipFilePath, i));
+//                     /*/
+//                     let mut readBuffer = Vec::new();
+//                     file.read_to_end(&mut readBuffer);
+//                     */
+//                 }
+//                 else if fileName.ends_with(".dds")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> DDS  File".to_string());}
+//                 }
+//                 else if fileName.ends_with(".ogg")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> OGG  File".to_string());}
+//                 }
+//                 else if fileName.ends_with(".wav")      
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" -> WAV  File".to_string());}
+//                 }
+//                 else
+//                 {
+//                     if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true {theLogFile.log(" ->      File".to_string());}
+//                 }
 
-                if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true
-                {
-                    let sMessage = format!(" is {}", &fileName);
-                    theLogFile.log(sMessage);
+//                 if LOG_FILENAME_FROM_ZIP_ARCHIVE ==true
+//                 {
+//                     let sMessage = format!(" is {}", &fileName);
+//                     theLogFile.log(sMessage);
 
-                    theLogFile.log("\n".to_string());
-                }
+//                     theLogFile.log("\n".to_string());
+//                 }
 
-                // Create the path to the extracted file in the destination directory.
-                // let target_path = extraction_dir.join(file_name);
+//                 // Create the path to the extracted file in the destination directory.
+//                 // let target_path = extraction_dir.join(file_name);
 
-                // // Create the destination directory if it does not exist.
-                // if let Some(parent_dir) = target_path.parent() {
-                //     std::fs::create_dir_all(parent_dir)?;
-                // }
+//                 // // Create the destination directory if it does not exist.
+//                 // if let Some(parent_dir) = target_path.parent() {
+//                 //     std::fs::create_dir_all(parent_dir)?;
+//                 // }
 
-                // let mut output_file = File::create(&target_path)?;
+//                 // let mut output_file = File::create(&target_path)?;
 
-                // // Read the contents of the file from the ZIP archive and write them to the destination file.
-                // io::copy(&mut file, &mut output_file)?;
+//                 // // Read the contents of the file from the ZIP archive and write them to the destination file.
+//                 // io::copy(&mut file, &mut output_file)?;
                 
-                //let mut _thisString:String = "".to_string();
-                //file.read_to_string(&mut _thisString);
-                //theLogFile.log(_thisString);
+//                 //let mut _thisString:String = "".to_string();
+//                 //file.read_to_string(&mut _thisString);
+//                 //theLogFile.log(_thisString);
 
-                //theLogFile.log("-----\n".to_string());
+//                 //theLogFile.log("-----\n".to_string());
 
-            }
+//             }
 
-            //println!("Files successfully extracted to {:?}", extraction_dir);
+//             //println!("Files successfully extracted to {:?}", extraction_dir);
 
-            // ----- fin essai fichier zip ----- 
+//             // ----- fin essai fichier zip ----- 
 
-        }
+//         }
 
-    }
+//     }
 
-    if LOG_PROC_FILELIST == true
-    {
-        logPakFileInfoList(     &mut theLogFile, 
-                                &"Dump procFilesInfoList".to_string(), 
-                                &procFilesInfoList);
-    }
+//     if LOG_PROC_FILELIST == true
+//     {
+//         logPakFileInfoList(     &mut theLogFile, 
+//                                 &"Dump procFilesInfoList".to_string(), 
+//                                 &procFilesInfoList);
+//     }
 
-    if LOG_MAP_FILELIST == true
-    {
-        logPakFileInfoList(     &mut theLogFile, 
-                                &"Dump mapFilesInfoList".to_string(), 
-                                &mapFilesInfoList);
-    }
+//     if LOG_MAP_FILELIST == true
+//     {
+//         logPakFileInfoList(     &mut theLogFile, 
+//                                 &"Dump mapFilesInfoList".to_string(), 
+//                                 &mapFilesInfoList);
+//     }
 
-    if  LOG_MTR_FILELIST == true
-    {
-        logPakFileInfoList(     &mut theLogFile, 
-                                &"Dump mtrFilesInfoList".to_string(), 
-                                &mtrFilesInfoList);
-    }
+//     if  LOG_MTR_FILELIST == true
+//     {
+//         logPakFileInfoList(     &mut theLogFile, 
+//                                 &"Dump mtrFilesInfoList".to_string(), 
+//                                 &mtrFilesInfoList);
+//     }
 
-    if  LOG_MTR_FILE_CONTENT == true
-    {
-        logStringList(  &mut theLogFile,  
-                        &"Dump mtrFilesContent".to_string(),
-                        &mtrFilesContent);
-    }
+//     if  LOG_MTR_FILE_CONTENT == true
+//     {
+//         logStringList(  &mut theLogFile,  
+//                         &"Dump mtrFilesContent".to_string(),
+//                         &mtrFilesContent);
+//     }
 
-    if  LOG_TGA_FILELIST == true
-    {
-        logPakFileInfoList(     &mut theLogFile, 
-                                &"Dump tgaFilesInfoList".to_string(), 
-                                &tgaFilesInfoList);
-    }
+//     if  LOG_TGA_FILELIST == true
+//     {
+//         logPakFileInfoList(     &mut theLogFile, 
+//                                 &"Dump tgaFilesInfoList".to_string(), 
+//                                 &tgaFilesInfoList);
+//     }
 
-    let ourScene = Scene::open(&mut theLogFile, "admin");
+//     let ourScene = Scene::open(&mut theLogFile, "admin");
 
-    let ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
-    return;
+//     let ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
+//     return;
     
-}
+// }
 
 
 // Vulkanalia tuto
@@ -1455,654 +1456,654 @@ fn main() -> Result<()> {
 //     Ok(())
 // }
 
-//================================================
-// Buffers
-//================================================
+// //================================================
+// // Buffers
+// //================================================
 
-unsafe fn create_vertex_buffer(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
-    // Create (staging)
+// unsafe fn create_vertex_buffer(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+//     // Create (staging)
 
-    let size = (size_of::<Vertex>() * VERTICES.len()) as u64;
+//     let size = (size_of::<Vertex>() * VERTICES.len()) as u64;
 
-    let (staging_buffer, staging_buffer_memory) = create_buffer(
-        instance,
-        device,
-        data,
-        size,
-        vk::BufferUsageFlags::TRANSFER_SRC,
-        vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
-    )?;
+//     let (staging_buffer, staging_buffer_memory) = create_buffer(
+//         instance,
+//         device,
+//         data,
+//         size,
+//         vk::BufferUsageFlags::TRANSFER_SRC,
+//         vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
+//     )?;
 
-    // Copy (staging)
+//     // Copy (staging)
 
-    let memory = device.map_memory(staging_buffer_memory, 0, size, vk::MemoryMapFlags::empty())?;
+//     let memory = device.map_memory(staging_buffer_memory, 0, size, vk::MemoryMapFlags::empty())?;
 
-    memcpy(VERTICES.as_ptr(), memory.cast(), VERTICES.len());
+//     memcpy(VERTICES.as_ptr(), memory.cast(), VERTICES.len());
 
-    device.unmap_memory(staging_buffer_memory);
+//     device.unmap_memory(staging_buffer_memory);
 
-    // Create (vertex)
+//     // Create (vertex)
 
-    let (vertex_buffer, vertex_buffer_memory) = create_buffer(
-        instance,
-        device,
-        data,
-        size,
-        vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
-        vk::MemoryPropertyFlags::DEVICE_LOCAL,
-    )?;
+//     let (vertex_buffer, vertex_buffer_memory) = create_buffer(
+//         instance,
+//         device,
+//         data,
+//         size,
+//         vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
+//         vk::MemoryPropertyFlags::DEVICE_LOCAL,
+//     )?;
 
-    data.vertex_buffer = vertex_buffer;
-    data.vertex_buffer_memory = vertex_buffer_memory;
+//     data.vertex_buffer = vertex_buffer;
+//     data.vertex_buffer_memory = vertex_buffer_memory;
 
-    // Copy (vertex)
+//     // Copy (vertex)
 
-    copy_buffer(device, data, staging_buffer, vertex_buffer, size)?;
+//     copy_buffer(device, data, staging_buffer, vertex_buffer, size)?;
 
-    // Cleanup
+//     // Cleanup
 
-    device.destroy_buffer(staging_buffer, None);
-    device.free_memory(staging_buffer_memory, None);
+//     device.destroy_buffer(staging_buffer, None);
+//     device.free_memory(staging_buffer_memory, None);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-unsafe fn create_index_buffer(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
-    // Create (staging)
+// unsafe fn create_index_buffer(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+//     // Create (staging)
 
-    let size = (size_of::<u16>() * INDICES.len()) as u64;
+//     let size = (size_of::<u16>() * INDICES.len()) as u64;
 
-    let (staging_buffer, staging_buffer_memory) = create_buffer(
-        instance,
-        device,
-        data,
-        size,
-        vk::BufferUsageFlags::TRANSFER_SRC,
-        vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
-    )?;
+//     let (staging_buffer, staging_buffer_memory) = create_buffer(
+//         instance,
+//         device,
+//         data,
+//         size,
+//         vk::BufferUsageFlags::TRANSFER_SRC,
+//         vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
+//     )?;
 
-    // Copy (staging)
+//     // Copy (staging)
 
-    let memory = device.map_memory(staging_buffer_memory, 0, size, vk::MemoryMapFlags::empty())?;
+//     let memory = device.map_memory(staging_buffer_memory, 0, size, vk::MemoryMapFlags::empty())?;
 
-    memcpy(INDICES.as_ptr(), memory.cast(), INDICES.len());
+//     memcpy(INDICES.as_ptr(), memory.cast(), INDICES.len());
 
-    device.unmap_memory(staging_buffer_memory);
+//     device.unmap_memory(staging_buffer_memory);
 
-    // Create (index)
+//     // Create (index)
 
-    let (index_buffer, index_buffer_memory) = create_buffer(
-        instance,
-        device,
-        data,
-        size,
-        vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
-        vk::MemoryPropertyFlags::DEVICE_LOCAL,
-    )?;
+//     let (index_buffer, index_buffer_memory) = create_buffer(
+//         instance,
+//         device,
+//         data,
+//         size,
+//         vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
+//         vk::MemoryPropertyFlags::DEVICE_LOCAL,
+//     )?;
 
-    data.index_buffer = index_buffer;
-    data.index_buffer_memory = index_buffer_memory;
+//     data.index_buffer = index_buffer;
+//     data.index_buffer_memory = index_buffer_memory;
 
-    // Copy (index)
+//     // Copy (index)
 
-    copy_buffer(device, data, staging_buffer, index_buffer, size)?;
+//     copy_buffer(device, data, staging_buffer, index_buffer, size)?;
 
-    // Cleanup
+//     // Cleanup
 
-    device.destroy_buffer(staging_buffer, None);
-    device.free_memory(staging_buffer_memory, None);
+//     device.destroy_buffer(staging_buffer, None);
+//     device.free_memory(staging_buffer_memory, None);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-unsafe fn create_uniform_buffers(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
-    data.uniform_buffers.clear();
-    data.uniform_buffers_memory.clear();
-
-    for _ in 0..data.swapchain_images.len() {
-        let (uniform_buffer, uniform_buffer_memory) = create_buffer(
-            instance,
-            device,
-            data,
-            size_of::<UniformBufferObject>() as u64,
-            vk::BufferUsageFlags::UNIFORM_BUFFER,
-            vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
-        )?;
-
-        data.uniform_buffers.push(uniform_buffer);
-        data.uniform_buffers_memory.push(uniform_buffer_memory);
-    }
-
-    Ok(())
-}
-
-//================================================
-// Descriptors
-//================================================
-
-unsafe fn create_descriptor_pool(device: &Device, data: &mut AppData) -> Result<()> {
-    let ubo_size = vk::DescriptorPoolSize::builder()
-        .type_(vk::DescriptorType::UNIFORM_BUFFER)
-        .descriptor_count(data.swapchain_images.len() as u32);
-
-    let sampler_size = vk::DescriptorPoolSize::builder()
-        .type_(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-        .descriptor_count(data.swapchain_images.len() as u32);
-
-    let pool_sizes = &[ubo_size, sampler_size];
-    let info = vk::DescriptorPoolCreateInfo::builder()
-        .pool_sizes(pool_sizes)
-        .max_sets(data.swapchain_images.len() as u32);
-
-    data.descriptor_pool = device.create_descriptor_pool(&info, None)?;
-
-    Ok(())
-}
-
-unsafe fn create_descriptor_sets(device: &Device, data: &mut AppData) -> Result<()> {
-    // Allocate
-
-    let layouts = vec![data.descriptor_set_layout; data.swapchain_images.len()];
-    let info = vk::DescriptorSetAllocateInfo::builder()
-        .descriptor_pool(data.descriptor_pool)
-        .set_layouts(&layouts);
-
-    data.descriptor_sets = device.allocate_descriptor_sets(&info)?;
-
-    // Update
-
-    for i in 0..data.swapchain_images.len() {
-        let info = vk::DescriptorBufferInfo::builder()
-            .buffer(data.uniform_buffers[i])
-            .offset(0)
-            .range(size_of::<UniformBufferObject>() as u64);
-
-        let buffer_info = &[info];
-        let ubo_write = vk::WriteDescriptorSet::builder()
-            .dst_set(data.descriptor_sets[i])
-            .dst_binding(0)
-            .dst_array_element(0)
-            .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
-            .buffer_info(buffer_info);
-
-        let info = vk::DescriptorImageInfo::builder()
-            .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
-            .image_view(data.texture_image_view)
-            .sampler(data.texture_sampler);
-
-        let image_info = &[info];
-        let sampler_write = vk::WriteDescriptorSet::builder()
-            .dst_set(data.descriptor_sets[i])
-            .dst_binding(1)
-            .dst_array_element(0)
-            .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-            .image_info(image_info);
-
-        device.update_descriptor_sets(&[ubo_write, sampler_write], &[] as &[vk::CopyDescriptorSet]);
-    }
-
-    Ok(())
-}
-
-//================================================
-// Command Buffers
-//================================================
-
-unsafe fn create_command_buffers(device: &Device, data: &mut AppData) -> Result<()> {
-    // Allocate
-
-    let allocate_info = vk::CommandBufferAllocateInfo::builder()
-        .command_pool(data.command_pool)
-        .level(vk::CommandBufferLevel::PRIMARY)
-        .command_buffer_count(data.framebuffers.len() as u32);
-
-    data.command_buffers = device.allocate_command_buffers(&allocate_info)?;
-
-    // Commands
-
-    for (i, command_buffer) in data.command_buffers.iter().enumerate() {
-        let info = vk::CommandBufferBeginInfo::builder();
-
-        device.begin_command_buffer(*command_buffer, &info)?;
-
-        let render_area = vk::Rect2D::builder()
-            .offset(vk::Offset2D::default())
-            .extent(data.swapchain_extent);
-
-        let color_clear_value = vk::ClearValue {
-            color: vk::ClearColorValue {
-                float32: [0.0, 0.0, 0.0, 1.0],
-            },
-        };
-
-        let clear_values = &[color_clear_value];
-        let info = vk::RenderPassBeginInfo::builder()
-            .render_pass(data.render_pass)
-            .framebuffer(data.framebuffers[i])
-            .render_area(render_area)
-            .clear_values(clear_values);
-
-        device.cmd_begin_render_pass(*command_buffer, &info, vk::SubpassContents::INLINE);
-        device.cmd_bind_pipeline(*command_buffer, vk::PipelineBindPoint::GRAPHICS, data.pipeline);
-        device.cmd_bind_vertex_buffers(*command_buffer, 0, &[data.vertex_buffer], &[0]);
-        device.cmd_bind_index_buffer(*command_buffer, data.index_buffer, 0, vk::IndexType::UINT16);
-        device.cmd_bind_descriptor_sets(
-            *command_buffer,
-            vk::PipelineBindPoint::GRAPHICS,
-            data.pipeline_layout,
-            0,
-            &[data.descriptor_sets[i]],
-            &[],
-        );
-        device.cmd_draw_indexed(*command_buffer, INDICES.len() as u32, 1, 0, 0, 0);
-        device.cmd_end_render_pass(*command_buffer);
-
-        device.end_command_buffer(*command_buffer)?;
-    }
-
-    Ok(())
-}
-
-//================================================
-// Sync Objects
-//================================================
-
-unsafe fn create_sync_objects(device: &Device, data: &mut AppData) -> Result<()> {
-    let semaphore_info = vk::SemaphoreCreateInfo::builder();
-    let fence_info = vk::FenceCreateInfo::builder().flags(vk::FenceCreateFlags::SIGNALED);
-
-    for _ in 0..MAX_FRAMES_IN_FLIGHT {
-        data.image_available_semaphores
-            .push(device.create_semaphore(&semaphore_info, None)?);
-        data.render_finished_semaphores
-            .push(device.create_semaphore(&semaphore_info, None)?);
-
-        data.in_flight_fences.push(device.create_fence(&fence_info, None)?);
-    }
-
-    data.images_in_flight = data.swapchain_images.iter().map(|_| vk::Fence::null()).collect();
-
-    Ok(())
-}
-
-//================================================
-// Structs
-//================================================
-
-#[derive(Copy, Clone, Debug)]
-struct QueueFamilyIndices {
-    graphics: u32,
-    present: u32,
-}
-
-impl QueueFamilyIndices {
-    unsafe fn get(instance: &Instance, data: &AppData, physical_device: vk::PhysicalDevice) -> Result<Self> {
-        let properties = instance.get_physical_device_queue_family_properties(physical_device);
-
-        let graphics = properties
-            .iter()
-            .position(|p| p.queue_flags.contains(vk::QueueFlags::GRAPHICS))
-            .map(|i| i as u32);
-
-        let mut present = None;
-        for (index, properties) in properties.iter().enumerate() {
-            if instance.get_physical_device_surface_support_khr(physical_device, index as u32, data.surface)? {
-                present = Some(index as u32);
-                break;
-            }
-        }
-
-        if let (Some(graphics), Some(present)) = (graphics, present) {
-            Ok(Self { graphics, present })
-        } else {
-            Err(anyhow!(SuitabilityError("Missing required queue families.")))
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-struct SwapchainSupport {
-    capabilities: vk::SurfaceCapabilitiesKHR,
-    formats: Vec<vk::SurfaceFormatKHR>,
-    present_modes: Vec<vk::PresentModeKHR>,
-}
-
-impl SwapchainSupport {
-    unsafe fn get(instance: &Instance, data: &AppData, physical_device: vk::PhysicalDevice) -> Result<Self> {
-        Ok(Self {
-            capabilities: instance.get_physical_device_surface_capabilities_khr(physical_device, data.surface)?,
-            formats: instance.get_physical_device_surface_formats_khr(physical_device, data.surface)?,
-            present_modes: instance.get_physical_device_surface_present_modes_khr(physical_device, data.surface)?,
-        })
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-struct UniformBufferObject {
-    model: Mat4,
-    view: Mat4,
-    proj: Mat4,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-struct Vertex {
-    pos: Vec2,
-    color: Vec3,
-    tex_coord: Vec2,
-}
-
-impl Vertex {
-    const fn new(pos: Vec2, color: Vec3, tex_coord: Vec2) -> Self {
-        Self { pos, color, tex_coord }
-    }
-
-    fn binding_description() -> vk::VertexInputBindingDescription {
-        vk::VertexInputBindingDescription::builder()
-            .binding(0)
-            .stride(size_of::<Vertex>() as u32)
-            .input_rate(vk::VertexInputRate::VERTEX)
-            .build()
-    }
-
-    fn attribute_descriptions() -> [vk::VertexInputAttributeDescription; 3] {
-        let pos = vk::VertexInputAttributeDescription::builder()
-            .binding(0)
-            .location(0)
-            .format(vk::Format::R32G32_SFLOAT)
-            .offset(0)
-            .build();
-        let color = vk::VertexInputAttributeDescription::builder()
-            .binding(0)
-            .location(1)
-            .format(vk::Format::R32G32B32_SFLOAT)
-            .offset(size_of::<Vec2>() as u32)
-            .build();
-        let tex_coord = vk::VertexInputAttributeDescription::builder()
-            .binding(0)
-            .location(2)
-            .format(vk::Format::R32G32_SFLOAT)
-            .offset((size_of::<Vec2>() + size_of::<Vec3>()) as u32)
-            .build();
-        [pos, color, tex_coord]
-    }
-}
-
-//================================================
-// Shared (Buffers)
-//================================================
-
-unsafe fn create_buffer(
-    instance: &Instance,
-    device: &Device,
-    data: &AppData,
-    size: vk::DeviceSize,
-    usage: vk::BufferUsageFlags,
-    properties: vk::MemoryPropertyFlags,
-) -> Result<(vk::Buffer, vk::DeviceMemory)> {
-    // Buffer
-
-    let buffer_info = vk::BufferCreateInfo::builder()
-        .size(size)
-        .usage(usage)
-        .sharing_mode(vk::SharingMode::EXCLUSIVE);
-
-    let buffer = device.create_buffer(&buffer_info, None)?;
-
-    // Memory
-
-    let requirements = device.get_buffer_memory_requirements(buffer);
-
-    let memory_info = vk::MemoryAllocateInfo::builder()
-        .allocation_size(requirements.size)
-        .memory_type_index(get_memory_type_index(instance, data, properties, requirements)?);
-
-    let buffer_memory = device.allocate_memory(&memory_info, None)?;
-
-    device.bind_buffer_memory(buffer, buffer_memory, 0)?;
-
-    Ok((buffer, buffer_memory))
-}
-
-unsafe fn copy_buffer(
-    device: &Device,
-    data: &AppData,
-    source: vk::Buffer,
-    destination: vk::Buffer,
-    size: vk::DeviceSize,
-) -> Result<()> {
-    let command_buffer = begin_single_time_commands(device, data)?;
-
-    let regions = vk::BufferCopy::builder().size(size);
-    device.cmd_copy_buffer(command_buffer, source, destination, &[regions]);
-
-    end_single_time_commands(device, data, command_buffer)?;
-
-    Ok(())
-}
-
-//================================================
-// Shared (Images)
-//================================================
-
-unsafe fn create_image(
-    instance: &Instance,
-    device: &Device,
-    data: &AppData,
-    width: u32,
-    height: u32,
-    format: vk::Format,
-    tiling: vk::ImageTiling,
-    usage: vk::ImageUsageFlags,
-    properties: vk::MemoryPropertyFlags,
-) -> Result<(vk::Image, vk::DeviceMemory)> {
-    // Image
-
-    let info = vk::ImageCreateInfo::builder()
-        .image_type(vk::ImageType::_2D)
-        .extent(vk::Extent3D {
-            width,
-            height,
-            depth: 1,
-        })
-        .mip_levels(1)
-        .array_layers(1)
-        .format(format)
-        .tiling(tiling)
-        .initial_layout(vk::ImageLayout::UNDEFINED)
-        .usage(usage)
-        .sharing_mode(vk::SharingMode::EXCLUSIVE)
-        .samples(vk::SampleCountFlags::_1);
-
-    let image = device.create_image(&info, None)?;
-
-    // Memory
-
-    let requirements = device.get_image_memory_requirements(image);
-
-    let info = vk::MemoryAllocateInfo::builder()
-        .allocation_size(requirements.size)
-        .memory_type_index(get_memory_type_index(instance, data, properties, requirements)?);
-
-    let image_memory = device.allocate_memory(&info, None)?;
-
-    device.bind_image_memory(image, image_memory, 0)?;
-
-    Ok((image, image_memory))
-}
-
-unsafe fn create_image_view(device: &Device, image: vk::Image, format: vk::Format) -> Result<vk::ImageView> {
-    let subresource_range = vk::ImageSubresourceRange::builder()
-        .aspect_mask(vk::ImageAspectFlags::COLOR)
-        .base_mip_level(0)
-        .level_count(1)
-        .base_array_layer(0)
-        .layer_count(1);
-
-    let info = vk::ImageViewCreateInfo::builder()
-        .image(image)
-        .view_type(vk::ImageViewType::_2D)
-        .format(format)
-        .subresource_range(subresource_range);
-
-    Ok(device.create_image_view(&info, None)?)
-}
-
-unsafe fn transition_image_layout(
-    device: &Device,
-    data: &AppData,
-    image: vk::Image,
-    format: vk::Format,
-    old_layout: vk::ImageLayout,
-    new_layout: vk::ImageLayout,
-) -> Result<()> {
-    let (src_access_mask, dst_access_mask, src_stage_mask, dst_stage_mask) = match (old_layout, new_layout) {
-        (vk::ImageLayout::UNDEFINED, vk::ImageLayout::TRANSFER_DST_OPTIMAL) => (
-            vk::AccessFlags::empty(),
-            vk::AccessFlags::TRANSFER_WRITE,
-            vk::PipelineStageFlags::TOP_OF_PIPE,
-            vk::PipelineStageFlags::TRANSFER,
-        ),
-        (vk::ImageLayout::TRANSFER_DST_OPTIMAL, vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL) => (
-            vk::AccessFlags::TRANSFER_WRITE,
-            vk::AccessFlags::SHADER_READ,
-            vk::PipelineStageFlags::TRANSFER,
-            vk::PipelineStageFlags::FRAGMENT_SHADER,
-        ),
-        _ => return Err(anyhow!("Unsupported image layout transition!")),
-    };
-
-    let command_buffer = begin_single_time_commands(device, data)?;
-
-    let subresource = vk::ImageSubresourceRange::builder()
-        .aspect_mask(vk::ImageAspectFlags::COLOR)
-        .base_mip_level(0)
-        .level_count(1)
-        .base_array_layer(0)
-        .layer_count(1);
-
-    let barrier = vk::ImageMemoryBarrier::builder()
-        .old_layout(old_layout)
-        .new_layout(new_layout)
-        .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
-        .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
-        .image(image)
-        .subresource_range(subresource)
-        .src_access_mask(src_access_mask)
-        .dst_access_mask(dst_access_mask);
-
-    device.cmd_pipeline_barrier(
-        command_buffer,
-        src_stage_mask,
-        dst_stage_mask,
-        vk::DependencyFlags::empty(),
-        &[] as &[vk::MemoryBarrier],
-        &[] as &[vk::BufferMemoryBarrier],
-        &[barrier],
-    );
-
-    end_single_time_commands(device, data, command_buffer)?;
-
-    Ok(())
-}
-
-unsafe fn copy_buffer_to_image(
-    device: &Device,
-    data: &AppData,
-    buffer: vk::Buffer,
-    image: vk::Image,
-    width: u32,
-    height: u32,
-) -> Result<()> {
-    let command_buffer = begin_single_time_commands(device, data)?;
-
-    let subresource = vk::ImageSubresourceLayers::builder()
-        .aspect_mask(vk::ImageAspectFlags::COLOR)
-        .mip_level(0)
-        .base_array_layer(0)
-        .layer_count(1);
-
-    let region = vk::BufferImageCopy::builder()
-        .buffer_offset(0)
-        .buffer_row_length(0)
-        .buffer_image_height(0)
-        .image_subresource(subresource)
-        .image_offset(vk::Offset3D { x: 0, y: 0, z: 0 })
-        .image_extent(vk::Extent3D {
-            width,
-            height,
-            depth: 1,
-        });
-
-    device.cmd_copy_buffer_to_image(
-        command_buffer,
-        buffer,
-        image,
-        vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-        &[region],
-    );
-
-    end_single_time_commands(device, data, command_buffer)?;
-
-    Ok(())
-}
-
-//================================================
-// Shared (Other)
-//================================================
-
-unsafe fn get_memory_type_index(
-    instance: &Instance,
-    data: &AppData,
-    properties: vk::MemoryPropertyFlags,
-    requirements: vk::MemoryRequirements,
-) -> Result<u32> {
-    let memory = instance.get_physical_device_memory_properties(data.physical_device);
-    (0..memory.memory_type_count)
-        .find(|i| {
-            let suitable = (requirements.memory_type_bits & (1 << i)) != 0;
-            let memory_type = memory.memory_types[*i as usize];
-            suitable && memory_type.property_flags.contains(properties)
-        })
-        .ok_or_else(|| anyhow!("Failed to find suitable memory type."))
-}
-
-unsafe fn begin_single_time_commands(device: &Device, data: &AppData) -> Result<vk::CommandBuffer> {
-    // Allocate
-
-    let info = vk::CommandBufferAllocateInfo::builder()
-        .level(vk::CommandBufferLevel::PRIMARY)
-        .command_pool(data.command_pool)
-        .command_buffer_count(1);
-
-    let command_buffer = device.allocate_command_buffers(&info)?[0];
-
-    // Begin
-
-    let info = vk::CommandBufferBeginInfo::builder().flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-
-    device.begin_command_buffer(command_buffer, &info)?;
-
-    Ok(command_buffer)
-}
-
-unsafe fn end_single_time_commands(device: &Device, data: &AppData, command_buffer: vk::CommandBuffer) -> Result<()> {
-    // End
-
-    device.end_command_buffer(command_buffer)?;
-
-    // Submit
-
-    let command_buffers = &[command_buffer];
-    let info = vk::SubmitInfo::builder().command_buffers(command_buffers);
-
-    device.queue_submit(data.graphics_queue, &[info], vk::Fence::null())?;
-    device.queue_wait_idle(data.graphics_queue)?;
-
-    // Cleanup
-
-    device.free_command_buffers(data.command_pool, &[command_buffer]);
-
-    Ok(())
-}
+// unsafe fn create_uniform_buffers(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+//     data.uniform_buffers.clear();
+//     data.uniform_buffers_memory.clear();
+
+//     for _ in 0..data.swapchain_images.len() {
+//         let (uniform_buffer, uniform_buffer_memory) = create_buffer(
+//             instance,
+//             device,
+//             data,
+//             size_of::<UniformBufferObject>() as u64,
+//             vk::BufferUsageFlags::UNIFORM_BUFFER,
+//             vk::MemoryPropertyFlags::HOST_COHERENT | vk::MemoryPropertyFlags::HOST_VISIBLE,
+//         )?;
+
+//         data.uniform_buffers.push(uniform_buffer);
+//         data.uniform_buffers_memory.push(uniform_buffer_memory);
+//     }
+
+//     Ok(())
+// }
+
+// //================================================
+// // Descriptors
+// //================================================
+
+// unsafe fn create_descriptor_pool(device: &Device, data: &mut AppData) -> Result<()> {
+//     let ubo_size = vk::DescriptorPoolSize::builder()
+//         .type_(vk::DescriptorType::UNIFORM_BUFFER)
+//         .descriptor_count(data.swapchain_images.len() as u32);
+
+//     let sampler_size = vk::DescriptorPoolSize::builder()
+//         .type_(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+//         .descriptor_count(data.swapchain_images.len() as u32);
+
+//     let pool_sizes = &[ubo_size, sampler_size];
+//     let info = vk::DescriptorPoolCreateInfo::builder()
+//         .pool_sizes(pool_sizes)
+//         .max_sets(data.swapchain_images.len() as u32);
+
+//     data.descriptor_pool = device.create_descriptor_pool(&info, None)?;
+
+//     Ok(())
+// }
+
+// unsafe fn create_descriptor_sets(device: &Device, data: &mut AppData) -> Result<()> {
+//     // Allocate
+
+//     let layouts = vec![data.descriptor_set_layout; data.swapchain_images.len()];
+//     let info = vk::DescriptorSetAllocateInfo::builder()
+//         .descriptor_pool(data.descriptor_pool)
+//         .set_layouts(&layouts);
+
+//     data.descriptor_sets = device.allocate_descriptor_sets(&info)?;
+
+//     // Update
+
+//     for i in 0..data.swapchain_images.len() {
+//         let info = vk::DescriptorBufferInfo::builder()
+//             .buffer(data.uniform_buffers[i])
+//             .offset(0)
+//             .range(size_of::<UniformBufferObject>() as u64);
+
+//         let buffer_info = &[info];
+//         let ubo_write = vk::WriteDescriptorSet::builder()
+//             .dst_set(data.descriptor_sets[i])
+//             .dst_binding(0)
+//             .dst_array_element(0)
+//             .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
+//             .buffer_info(buffer_info);
+
+//         let info = vk::DescriptorImageInfo::builder()
+//             .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+//             .image_view(data.texture_image_view)
+//             .sampler(data.texture_sampler);
+
+//         let image_info = &[info];
+//         let sampler_write = vk::WriteDescriptorSet::builder()
+//             .dst_set(data.descriptor_sets[i])
+//             .dst_binding(1)
+//             .dst_array_element(0)
+//             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+//             .image_info(image_info);
+
+//         device.update_descriptor_sets(&[ubo_write, sampler_write], &[] as &[vk::CopyDescriptorSet]);
+//     }
+
+//     Ok(())
+// }
+
+// //================================================
+// // Command Buffers
+// //================================================
+
+// unsafe fn create_command_buffers(device: &Device, data: &mut AppData) -> Result<()> {
+//     // Allocate
+
+//     let allocate_info = vk::CommandBufferAllocateInfo::builder()
+//         .command_pool(data.command_pool)
+//         .level(vk::CommandBufferLevel::PRIMARY)
+//         .command_buffer_count(data.framebuffers.len() as u32);
+
+//     data.command_buffers = device.allocate_command_buffers(&allocate_info)?;
+
+//     // Commands
+
+//     for (i, command_buffer) in data.command_buffers.iter().enumerate() {
+//         let info = vk::CommandBufferBeginInfo::builder();
+
+//         device.begin_command_buffer(*command_buffer, &info)?;
+
+//         let render_area = vk::Rect2D::builder()
+//             .offset(vk::Offset2D::default())
+//             .extent(data.swapchain_extent);
+
+//         let color_clear_value = vk::ClearValue {
+//             color: vk::ClearColorValue {
+//                 float32: [0.0, 0.0, 0.0, 1.0],
+//             },
+//         };
+
+//         let clear_values = &[color_clear_value];
+//         let info = vk::RenderPassBeginInfo::builder()
+//             .render_pass(data.render_pass)
+//             .framebuffer(data.framebuffers[i])
+//             .render_area(render_area)
+//             .clear_values(clear_values);
+
+//         device.cmd_begin_render_pass(*command_buffer, &info, vk::SubpassContents::INLINE);
+//         device.cmd_bind_pipeline(*command_buffer, vk::PipelineBindPoint::GRAPHICS, data.pipeline);
+//         device.cmd_bind_vertex_buffers(*command_buffer, 0, &[data.vertex_buffer], &[0]);
+//         device.cmd_bind_index_buffer(*command_buffer, data.index_buffer, 0, vk::IndexType::UINT16);
+//         device.cmd_bind_descriptor_sets(
+//             *command_buffer,
+//             vk::PipelineBindPoint::GRAPHICS,
+//             data.pipeline_layout,
+//             0,
+//             &[data.descriptor_sets[i]],
+//             &[],
+//         );
+//         device.cmd_draw_indexed(*command_buffer, INDICES.len() as u32, 1, 0, 0, 0);
+//         device.cmd_end_render_pass(*command_buffer);
+
+//         device.end_command_buffer(*command_buffer)?;
+//     }
+
+//     Ok(())
+// }
+
+// //================================================
+// // Sync Objects
+// //================================================
+
+// unsafe fn create_sync_objects(device: &Device, data: &mut AppData) -> Result<()> {
+//     let semaphore_info = vk::SemaphoreCreateInfo::builder();
+//     let fence_info = vk::FenceCreateInfo::builder().flags(vk::FenceCreateFlags::SIGNALED);
+
+//     for _ in 0..MAX_FRAMES_IN_FLIGHT {
+//         data.image_available_semaphores
+//             .push(device.create_semaphore(&semaphore_info, None)?);
+//         data.render_finished_semaphores
+//             .push(device.create_semaphore(&semaphore_info, None)?);
+
+//         data.in_flight_fences.push(device.create_fence(&fence_info, None)?);
+//     }
+
+//     data.images_in_flight = data.swapchain_images.iter().map(|_| vk::Fence::null()).collect();
+
+//     Ok(())
+// }
+
+// //================================================
+// // Structs
+// //================================================
+
+// #[derive(Copy, Clone, Debug)]
+// struct QueueFamilyIndices {
+//     graphics: u32,
+//     present: u32,
+// }
+
+// impl QueueFamilyIndices {
+//     unsafe fn get(instance: &Instance, data: &AppData, physical_device: vk::PhysicalDevice) -> Result<Self> {
+//         let properties = instance.get_physical_device_queue_family_properties(physical_device);
+
+//         let graphics = properties
+//             .iter()
+//             .position(|p| p.queue_flags.contains(vk::QueueFlags::GRAPHICS))
+//             .map(|i| i as u32);
+
+//         let mut present = None;
+//         for (index, properties) in properties.iter().enumerate() {
+//             if instance.get_physical_device_surface_support_khr(physical_device, index as u32, data.surface)? {
+//                 present = Some(index as u32);
+//                 break;
+//             }
+//         }
+
+//         if let (Some(graphics), Some(present)) = (graphics, present) {
+//             Ok(Self { graphics, present })
+//         } else {
+//             Err(anyhow!(SuitabilityError("Missing required queue families.")))
+//         }
+//     }
+// }
+
+// #[derive(Clone, Debug)]
+// struct SwapchainSupport {
+//     capabilities: vk::SurfaceCapabilitiesKHR,
+//     formats: Vec<vk::SurfaceFormatKHR>,
+//     present_modes: Vec<vk::PresentModeKHR>,
+// }
+
+// impl SwapchainSupport {
+//     unsafe fn get(instance: &Instance, data: &AppData, physical_device: vk::PhysicalDevice) -> Result<Self> {
+//         Ok(Self {
+//             capabilities: instance.get_physical_device_surface_capabilities_khr(physical_device, data.surface)?,
+//             formats: instance.get_physical_device_surface_formats_khr(physical_device, data.surface)?,
+//             present_modes: instance.get_physical_device_surface_present_modes_khr(physical_device, data.surface)?,
+//         })
+//     }
+// }
+
+// #[repr(C)]
+// #[derive(Copy, Clone, Debug)]
+// struct UniformBufferObject {
+//     model: Mat4,
+//     view: Mat4,
+//     proj: Mat4,
+// }
+
+// #[repr(C)]
+// #[derive(Copy, Clone, Debug)]
+// struct Vertex {
+//     pos: Vec2,
+//     color: Vec3,
+//     tex_coord: Vec2,
+// }
+
+// impl Vertex {
+//     const fn new(pos: Vec2, color: Vec3, tex_coord: Vec2) -> Self {
+//         Self { pos, color, tex_coord }
+//     }
+
+//     fn binding_description() -> vk::VertexInputBindingDescription {
+//         vk::VertexInputBindingDescription::builder()
+//             .binding(0)
+//             .stride(size_of::<Vertex>() as u32)
+//             .input_rate(vk::VertexInputRate::VERTEX)
+//             .build()
+//     }
+
+//     fn attribute_descriptions() -> [vk::VertexInputAttributeDescription; 3] {
+//         let pos = vk::VertexInputAttributeDescription::builder()
+//             .binding(0)
+//             .location(0)
+//             .format(vk::Format::R32G32_SFLOAT)
+//             .offset(0)
+//             .build();
+//         let color = vk::VertexInputAttributeDescription::builder()
+//             .binding(0)
+//             .location(1)
+//             .format(vk::Format::R32G32B32_SFLOAT)
+//             .offset(size_of::<Vec2>() as u32)
+//             .build();
+//         let tex_coord = vk::VertexInputAttributeDescription::builder()
+//             .binding(0)
+//             .location(2)
+//             .format(vk::Format::R32G32_SFLOAT)
+//             .offset((size_of::<Vec2>() + size_of::<Vec3>()) as u32)
+//             .build();
+//         [pos, color, tex_coord]
+//     }
+// }
+
+// //================================================
+// // Shared (Buffers)
+// //================================================
+
+// unsafe fn create_buffer(
+//     instance: &Instance,
+//     device: &Device,
+//     data: &AppData,
+//     size: vk::DeviceSize,
+//     usage: vk::BufferUsageFlags,
+//     properties: vk::MemoryPropertyFlags,
+// ) -> Result<(vk::Buffer, vk::DeviceMemory)> {
+//     // Buffer
+
+//     let buffer_info = vk::BufferCreateInfo::builder()
+//         .size(size)
+//         .usage(usage)
+//         .sharing_mode(vk::SharingMode::EXCLUSIVE);
+
+//     let buffer = device.create_buffer(&buffer_info, None)?;
+
+//     // Memory
+
+//     let requirements = device.get_buffer_memory_requirements(buffer);
+
+//     let memory_info = vk::MemoryAllocateInfo::builder()
+//         .allocation_size(requirements.size)
+//         .memory_type_index(get_memory_type_index(instance, data, properties, requirements)?);
+
+//     let buffer_memory = device.allocate_memory(&memory_info, None)?;
+
+//     device.bind_buffer_memory(buffer, buffer_memory, 0)?;
+
+//     Ok((buffer, buffer_memory))
+// }
+
+// unsafe fn copy_buffer(
+//     device: &Device,
+//     data: &AppData,
+//     source: vk::Buffer,
+//     destination: vk::Buffer,
+//     size: vk::DeviceSize,
+// ) -> Result<()> {
+//     let command_buffer = begin_single_time_commands(device, data)?;
+
+//     let regions = vk::BufferCopy::builder().size(size);
+//     device.cmd_copy_buffer(command_buffer, source, destination, &[regions]);
+
+//     end_single_time_commands(device, data, command_buffer)?;
+
+//     Ok(())
+// }
+
+// //================================================
+// // Shared (Images)
+// //================================================
+
+// unsafe fn create_image(
+//     instance: &Instance,
+//     device: &Device,
+//     data: &AppData,
+//     width: u32,
+//     height: u32,
+//     format: vk::Format,
+//     tiling: vk::ImageTiling,
+//     usage: vk::ImageUsageFlags,
+//     properties: vk::MemoryPropertyFlags,
+// ) -> Result<(vk::Image, vk::DeviceMemory)> {
+//     // Image
+
+//     let info = vk::ImageCreateInfo::builder()
+//         .image_type(vk::ImageType::_2D)
+//         .extent(vk::Extent3D {
+//             width,
+//             height,
+//             depth: 1,
+//         })
+//         .mip_levels(1)
+//         .array_layers(1)
+//         .format(format)
+//         .tiling(tiling)
+//         .initial_layout(vk::ImageLayout::UNDEFINED)
+//         .usage(usage)
+//         .sharing_mode(vk::SharingMode::EXCLUSIVE)
+//         .samples(vk::SampleCountFlags::_1);
+
+//     let image = device.create_image(&info, None)?;
+
+//     // Memory
+
+//     let requirements = device.get_image_memory_requirements(image);
+
+//     let info = vk::MemoryAllocateInfo::builder()
+//         .allocation_size(requirements.size)
+//         .memory_type_index(get_memory_type_index(instance, data, properties, requirements)?);
+
+//     let image_memory = device.allocate_memory(&info, None)?;
+
+//     device.bind_image_memory(image, image_memory, 0)?;
+
+//     Ok((image, image_memory))
+// }
+
+// unsafe fn create_image_view(device: &Device, image: vk::Image, format: vk::Format) -> Result<vk::ImageView> {
+//     let subresource_range = vk::ImageSubresourceRange::builder()
+//         .aspect_mask(vk::ImageAspectFlags::COLOR)
+//         .base_mip_level(0)
+//         .level_count(1)
+//         .base_array_layer(0)
+//         .layer_count(1);
+
+//     let info = vk::ImageViewCreateInfo::builder()
+//         .image(image)
+//         .view_type(vk::ImageViewType::_2D)
+//         .format(format)
+//         .subresource_range(subresource_range);
+
+//     Ok(device.create_image_view(&info, None)?)
+// }
+
+// unsafe fn transition_image_layout(
+//     device: &Device,
+//     data: &AppData,
+//     image: vk::Image,
+//     format: vk::Format,
+//     old_layout: vk::ImageLayout,
+//     new_layout: vk::ImageLayout,
+// ) -> Result<()> {
+//     let (src_access_mask, dst_access_mask, src_stage_mask, dst_stage_mask) = match (old_layout, new_layout) {
+//         (vk::ImageLayout::UNDEFINED, vk::ImageLayout::TRANSFER_DST_OPTIMAL) => (
+//             vk::AccessFlags::empty(),
+//             vk::AccessFlags::TRANSFER_WRITE,
+//             vk::PipelineStageFlags::TOP_OF_PIPE,
+//             vk::PipelineStageFlags::TRANSFER,
+//         ),
+//         (vk::ImageLayout::TRANSFER_DST_OPTIMAL, vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL) => (
+//             vk::AccessFlags::TRANSFER_WRITE,
+//             vk::AccessFlags::SHADER_READ,
+//             vk::PipelineStageFlags::TRANSFER,
+//             vk::PipelineStageFlags::FRAGMENT_SHADER,
+//         ),
+//         _ => return Err(anyhow!("Unsupported image layout transition!")),
+//     };
+
+//     let command_buffer = begin_single_time_commands(device, data)?;
+
+//     let subresource = vk::ImageSubresourceRange::builder()
+//         .aspect_mask(vk::ImageAspectFlags::COLOR)
+//         .base_mip_level(0)
+//         .level_count(1)
+//         .base_array_layer(0)
+//         .layer_count(1);
+
+//     let barrier = vk::ImageMemoryBarrier::builder()
+//         .old_layout(old_layout)
+//         .new_layout(new_layout)
+//         .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
+//         .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
+//         .image(image)
+//         .subresource_range(subresource)
+//         .src_access_mask(src_access_mask)
+//         .dst_access_mask(dst_access_mask);
+
+//     device.cmd_pipeline_barrier(
+//         command_buffer,
+//         src_stage_mask,
+//         dst_stage_mask,
+//         vk::DependencyFlags::empty(),
+//         &[] as &[vk::MemoryBarrier],
+//         &[] as &[vk::BufferMemoryBarrier],
+//         &[barrier],
+//     );
+
+//     end_single_time_commands(device, data, command_buffer)?;
+
+//     Ok(())
+// }
+
+// unsafe fn copy_buffer_to_image(
+//     device: &Device,
+//     data: &AppData,
+//     buffer: vk::Buffer,
+//     image: vk::Image,
+//     width: u32,
+//     height: u32,
+// ) -> Result<()> {
+//     let command_buffer = begin_single_time_commands(device, data)?;
+
+//     let subresource = vk::ImageSubresourceLayers::builder()
+//         .aspect_mask(vk::ImageAspectFlags::COLOR)
+//         .mip_level(0)
+//         .base_array_layer(0)
+//         .layer_count(1);
+
+//     let region = vk::BufferImageCopy::builder()
+//         .buffer_offset(0)
+//         .buffer_row_length(0)
+//         .buffer_image_height(0)
+//         .image_subresource(subresource)
+//         .image_offset(vk::Offset3D { x: 0, y: 0, z: 0 })
+//         .image_extent(vk::Extent3D {
+//             width,
+//             height,
+//             depth: 1,
+//         });
+
+//     device.cmd_copy_buffer_to_image(
+//         command_buffer,
+//         buffer,
+//         image,
+//         vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+//         &[region],
+//     );
+
+//     end_single_time_commands(device, data, command_buffer)?;
+
+//     Ok(())
+// }
+
+// //================================================
+// // Shared (Other)
+// //================================================
+
+// unsafe fn get_memory_type_index(
+//     instance: &Instance,
+//     data: &AppData,
+//     properties: vk::MemoryPropertyFlags,
+//     requirements: vk::MemoryRequirements,
+// ) -> Result<u32> {
+//     let memory = instance.get_physical_device_memory_properties(data.physical_device);
+//     (0..memory.memory_type_count)
+//         .find(|i| {
+//             let suitable = (requirements.memory_type_bits & (1 << i)) != 0;
+//             let memory_type = memory.memory_types[*i as usize];
+//             suitable && memory_type.property_flags.contains(properties)
+//         })
+//         .ok_or_else(|| anyhow!("Failed to find suitable memory type."))
+// }
+
+// unsafe fn begin_single_time_commands(device: &Device, data: &AppData) -> Result<vk::CommandBuffer> {
+//     // Allocate
+
+//     let info = vk::CommandBufferAllocateInfo::builder()
+//         .level(vk::CommandBufferLevel::PRIMARY)
+//         .command_pool(data.command_pool)
+//         .command_buffer_count(1);
+
+//     let command_buffer = device.allocate_command_buffers(&info)?[0];
+
+//     // Begin
+
+//     let info = vk::CommandBufferBeginInfo::builder().flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+
+//     device.begin_command_buffer(command_buffer, &info)?;
+
+//     Ok(command_buffer)
+// }
+
+// unsafe fn end_single_time_commands(device: &Device, data: &AppData, command_buffer: vk::CommandBuffer) -> Result<()> {
+//     // End
+
+//     device.end_command_buffer(command_buffer)?;
+
+//     // Submit
+
+//     let command_buffers = &[command_buffer];
+//     let info = vk::SubmitInfo::builder().command_buffers(command_buffers);
+
+//     device.queue_submit(data.graphics_queue, &[info], vk::Fence::null())?;
+//     device.queue_wait_idle(data.graphics_queue)?;
+
+//     // Cleanup
+
+//     device.free_command_buffers(data.command_pool, &[command_buffer]);
+
+//     Ok(())
+// }

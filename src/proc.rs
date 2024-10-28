@@ -8,7 +8,8 @@ use std::{fs, usize};
 use std::process::exit;
 // use fs::File;
 // use chrono::{DateTime, Utc};
-use crate::{logfile::myLogFile, LOG_MODEL_DETAILS};
+use crate::logfile::myLogFile;
+use crate::rustDoom::LOG_MODEL_DETAILS;
 
 
 pub struct Vertex

@@ -27,9 +27,9 @@ use vulkanalia::prelude::v1_0::*;
 // use vulkanalia::vk::KhrSurfaceExtension;
 // use vulkanalia::vk::KhrSwapchainExtension;
 
-use crate::SwapchainSupport;
+use crate::structs::SwapchainSupport;
 use crate::DEVICE_EXTENSIONS;
-use crate::QueueFamilyIndices;
+use crate::structs::QueueFamilyIndices;
 use crate::AppData;
 
 //================================================

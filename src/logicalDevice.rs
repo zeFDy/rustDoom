@@ -29,7 +29,7 @@ use vulkanalia::prelude::v1_0::*;
 
 // use crate::SwapchainSupport;
 use crate::DEVICE_EXTENSIONS;
-use crate::QueueFamilyIndices;
+use crate::structs::QueueFamilyIndices;
 use crate::AppData;
 
 use crate::VALIDATION_ENABLED;

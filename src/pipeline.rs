@@ -37,7 +37,7 @@ use crate::AppData;
 // use crate::PORTABILITY_MACOS_VERSION;
 
 // use crate::create_image_view;
-use crate::Vertex;
+use crate::structs::Vertex;
 
 
 //================================================
