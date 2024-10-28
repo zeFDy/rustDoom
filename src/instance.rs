@@ -1,7 +1,8 @@
 // Vulkanalia tuto
 
 use std::collections::HashSet;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
+// use std::ffi::CString;
 // use std::fs::File;
 // use std::io::Read;
 // use std::mem::size_of;
@@ -13,19 +14,20 @@ use anyhow::{anyhow, Result};
 // use cgmath::{point3, vec2, vec3, Deg};
 use log::*;
 // use thiserror::Error;
-use vulkanalia::bytecode::Bytecode;
-use vulkanalia::loader::{LibloadingLoader, LIBRARY};
+// use vulkanalia::bytecode::Bytecode;
+// use vulkanalia::loader::{LibloadingLoader, LIBRARY};
 use vulkanalia::prelude::v1_0::*;
 use vulkanalia::window as vk_window;
-use vulkanalia::Version;
-use winit::dpi::LogicalSize;
-use winit::event::{Event, WindowEvent};
-use winit::event_loop::EventLoop;
-use winit::window::{Window, WindowBuilder};
+// use vulkanalia::Version;
+// use winit::dpi::LogicalSize;
+// use winit::event::{Event, WindowEvent};
+// use winit::event_loop::EventLoop;
+use winit::window::Window;
+// use winit::window::WindowBuilder;
 
 use vulkanalia::vk::ExtDebugUtilsExtension;
-use vulkanalia::vk::KhrSurfaceExtension;
-use vulkanalia::vk::KhrSwapchainExtension;
+// use vulkanalia::vk::KhrSurfaceExtension;
+// use vulkanalia::vk::KhrSwapchainExtension;
 
 use crate::app::AppData;
 

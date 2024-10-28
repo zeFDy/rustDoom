@@ -1,28 +1,30 @@
 //use std::collections::HashSet;
 //use std::ffi::{CStr, CString};
-use std::fs::File;
-use std::io::Read;
-use std::mem::size_of;
+use std::ffi::CString;
+// use std::fs::File;
+// use std::io::Read;
+// use std::mem::size_of;
 //use std::os::raw::c_void;
 use std::ptr::copy_nonoverlapping as memcpy;
 //use std::time::Instant;
 
-use anyhow::{anyhow, Result};
-use cgmath::{point3, vec2, vec3, Deg};
+use anyhow::Result;
+// use anyhow::anyhow;
+// use cgmath::{point3, vec2, vec3, Deg};
 //use log::*;
 //use thiserror::Error;
 //use vulkanalia::bytecode::Bytecode;
 // use vulkanalia::loader::{LibloadingLoader, LIBRARY};
 use vulkanalia::prelude::v1_0::*;
 //use vulkanalia::window as vk_window;
-use vulkanalia::Version;
-use winit::dpi::LogicalSize;
-use winit::event::{Event, WindowEvent};
-use winit::event_loop::EventLoop;
-use winit::window::{Window, WindowBuilder};
+// use vulkanalia::Version;
+// use winit::dpi::LogicalSize;
+// use winit::event::{Event, WindowEvent};
+// use winit::event_loop::EventLoop;
+// use winit::window::{Window, WindowBuilder};
 
 //use vulkanalia::vk::ExtDebugUtilsExtension;
-use vulkanalia::vk::KhrSurfaceExtension;
+// use vulkanalia::vk::KhrSurfaceExtension;
 //use vulkanalia::vk::KhrSwapchainExtension;
 
 use crate::AppData;
@@ -31,7 +33,7 @@ use crate::create_image;
 use crate::create_image_view;
 use crate::transition_image_layout;
 use crate::copy_buffer_to_image;
-
+use stb_image::stb_image;
 
 //================================================
 // Texture
@@ -54,7 +56,6 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
     let (width, height) = reader.info().size();
     */
 
-    /*
     // version stb_image
     let mut x: i32 =0;
     let mut y: i32 =0;
@@ -83,8 +84,8 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
         
         if iCounter>= size as usize    {break;};
     }
-    */
-    
+
+    /*
     let mut tgaImageFile    = File::open("resources/a_lflift_d02.tga")?;
     
     
@@ -149,7 +150,7 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
 
         if iCounter>= tga_imageSize as usize    {break;};
     }
-    
+    */
 
     // Create (staging)
 

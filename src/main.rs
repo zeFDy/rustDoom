@@ -50,7 +50,7 @@ pub mod commandPool;
 pub mod texture;
 
 use app::{App, AppData};
-use stb_image::stb_image;
+// use stb_image::stb_image;
 
 // Vulkanalia tuto
 
@@ -64,7 +64,8 @@ use std::ptr::copy_nonoverlapping as memcpy;
 //use std::time::Instant;
 
 use anyhow::{anyhow, Result};
-use cgmath::{point3, vec2, vec3, Deg};
+use cgmath::{vec2, vec3};
+// use cgmath::{point3, Deg};
 //use log::*;
 //use thiserror::Error;
 //use vulkanalia::bytecode::Bytecode;
@@ -75,7 +76,8 @@ use vulkanalia::Version;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
-use winit::window::{Window, WindowBuilder};
+// use winit::window::Window;
+use winit::window::WindowBuilder;
 
 //use vulkanalia::vk::ExtDebugUtilsExtension;
 use vulkanalia::vk::KhrSurfaceExtension;
@@ -335,9 +337,9 @@ fn mainRustDoom()
                                 &tgaFilesInfoList);
     }
 
-    let mut ourScene = Scene::open(&mut theLogFile, "admin");
+    let ourScene = Scene::open(&mut theLogFile, "admin");
 
-    let mut ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
+    let ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
     return;
     
 }
