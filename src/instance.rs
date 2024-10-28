@@ -30,22 +30,19 @@ use vulkanalia::vk::KhrSwapchainExtension;
 use crate::app::AppData;
 
 
-/// Whether the validation layers should be enabled.
-const VALIDATION_ENABLED: bool = cfg!(debug_assertions);
-/// The name of the validation layers.
-const VALIDATION_LAYER: vk::ExtensionName = vk::ExtensionName::from_bytes(b"VK_LAYER_KHRONOS_validation");
+use crate::VALIDATION_ENABLED;
+use crate::VALIDATION_LAYER;
+use crate::DEVICE_EXTENSIONS;
+use crate::PORTABILITY_MACOS_VERSION;
+use crate::MAX_FRAMES_IN_FLIGHT;
 
-/// The required device extensions.
-const DEVICE_EXTENSIONS: &[vk::ExtensionName] = &[vk::KHR_SWAPCHAIN_EXTENSION.name];
-/// The Vulkan SDK version that started requiring the portability subset extension for macOS.
-const PORTABILITY_MACOS_VERSION: Version = Version::new(1, 3, 216);
+use crate::Vec2;
+use crate::Vec3;
+use crate::Mat4;
 
-/// The maximum number of frames that can be processed concurrently.
-const MAX_FRAMES_IN_FLIGHT: usize = 2;
-
-type Vec2 = cgmath::Vector2<f32>;
-type Vec3 = cgmath::Vector3<f32>;
-type Mat4 = cgmath::Matrix4<f32>;
+// type Vec2 = cgmath::Vector2<f32>;
+// type Vec3 = cgmath::Vector3<f32>;
+// type Mat4 = cgmath::Matrix4<f32>;
 
 
 //================================================

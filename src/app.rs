@@ -33,31 +33,34 @@ use crate::app;
 //use crate::main::{create_surface, pick_physical_device};
 use crate::physicalDevice::pick_physical_device;
 
-use crate::{create_logical_device, create_swapchain, create_swapchain_image_views};
-use crate::{create_render_pass, create_descriptor_set_layout, create_pipeline};
+use crate::logicalDevice::create_logical_device;
+use crate::swapchain::create_swapchain;
+use crate::swapchain::create_swapchain_image_views;
+
+use crate::pipeline::create_render_pass;
+use crate::pipeline::create_descriptor_set_layout;
+use crate::pipeline::create_pipeline;
+
 use crate::{create_framebuffers, create_command_pool, create_texture_image, create_texture_image_view};
 use crate::{create_texture_sampler, create_vertex_buffer, create_index_buffer, create_descriptor_pool};
 use crate::{create_descriptor_sets, create_command_buffers};
 use crate::{create_uniform_buffers, create_sync_objects};
 use crate::UniformBufferObject;
 
-/// Whether the validation layers should be enabled.
-const VALIDATION_ENABLED: bool = cfg!(debug_assertions);
-/// The name of the validation layers.
-const VALIDATION_LAYER: vk::ExtensionName = vk::ExtensionName::from_bytes(b"VK_LAYER_KHRONOS_validation");
 
-/// The required device extensions.
-const DEVICE_EXTENSIONS: &[vk::ExtensionName] = &[vk::KHR_SWAPCHAIN_EXTENSION.name];
-/// The Vulkan SDK version that started requiring the portability subset extension for macOS.
-const PORTABILITY_MACOS_VERSION: Version = Version::new(1, 3, 216);
+use crate::VALIDATION_ENABLED;
+use crate::VALIDATION_LAYER;
+use crate::DEVICE_EXTENSIONS;
+use crate::PORTABILITY_MACOS_VERSION;
+use crate::MAX_FRAMES_IN_FLIGHT;
 
-/// The maximum number of frames that can be processed concurrently.
-const MAX_FRAMES_IN_FLIGHT: usize = 2;
+use crate::Vec2;
+use crate::Vec3;
+use crate::Mat4;
 
-type Vec2 = cgmath::Vector2<f32>;
-type Vec3 = cgmath::Vector3<f32>;
-type Mat4 = cgmath::Matrix4<f32>;
-
+// type Vec2 = cgmath::Vector2<f32>;
+// type Vec3 = cgmath::Vector3<f32>;
+// type Mat4 = cgmath::Matrix4<f32>;
 
 
 /// Our Vulkan app.

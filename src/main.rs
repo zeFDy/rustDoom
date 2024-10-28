@@ -40,6 +40,10 @@ pub mod welcome;
 pub mod scene;
 pub mod instance;
 pub mod app;
+pub mod physicalDevice;
+pub mod logicalDevice;
+pub mod swapchain;
+pub mod pipeline;
 
 use app::{App, AppData};
 
@@ -74,11 +78,10 @@ use vulkanalia::vk::ExtDebugUtilsExtension;
 use vulkanalia::vk::KhrSurfaceExtension;
 use vulkanalia::vk::KhrSwapchainExtension;
 
-pub mod physicalDevice;
 use crate::physicalDevice::SuitabilityError;
      
 /// Whether the validation layers should be enabled.
-const VALIDATION_ENABLED: bool = cfg!(debug_assertions);
+const VALIDATION_ENABLED: bool = false /*cfg!(debug_assertions)*/;
 /// The name of the validation layers.
 const VALIDATION_LAYER: vk::ExtensionName = vk::ExtensionName::from_bytes(b"VK_LAYER_KHRONOS_validation");
 
@@ -354,7 +357,7 @@ const INDICES: &[u16] = &[0, 1, 2, 2, 3, 0];
 fn main() -> Result<()> {
     pretty_env_logger::init();
 
-    mainRustDoom();
+    //mainRustDoom();
 
     // Window
 
@@ -834,370 +837,370 @@ fn main() -> Result<()> {
 //     }
 // }
 
-//================================================
-// Logical Device
-//================================================
+// //================================================
+// // Logical Device
+// //================================================
 
-pub unsafe fn create_logical_device(entry: &Entry, instance: &Instance, data: &mut AppData) -> Result<Device> {
-    // Queue Create Infos
-
-    let indices = QueueFamilyIndices::get(instance, data, data.physical_device)?;
-
-    let mut unique_indices = HashSet::new();
-    unique_indices.insert(indices.graphics);
-    unique_indices.insert(indices.present);
-
-    let queue_priorities = &[1.0];
-    let queue_infos = unique_indices
-        .iter()
-        .map(|i| {
-            vk::DeviceQueueCreateInfo::builder()
-                .queue_family_index(*i)
-                .queue_priorities(queue_priorities)
-        })
-        .collect::<Vec<_>>();
+// pub unsafe fn create_logical_device(entry: &Entry, instance: &Instance, data: &mut AppData) -> Result<Device> {
+//     // Queue Create Infos
+
+//     let indices = QueueFamilyIndices::get(instance, data, data.physical_device)?;
+
+//     let mut unique_indices = HashSet::new();
+//     unique_indices.insert(indices.graphics);
+//     unique_indices.insert(indices.present);
+
+//     let queue_priorities = &[1.0];
+//     let queue_infos = unique_indices
+//         .iter()
+//         .map(|i| {
+//             vk::DeviceQueueCreateInfo::builder()
+//                 .queue_family_index(*i)
+//                 .queue_priorities(queue_priorities)
+//         })
+//         .collect::<Vec<_>>();
 
-    // Layers
+//     // Layers
 
-    let layers = if VALIDATION_ENABLED {
-        vec![VALIDATION_LAYER.as_ptr()]
-    } else {
-        vec![]
-    };
-
-    // Extensions
-
-    let mut extensions = DEVICE_EXTENSIONS.iter().map(|n| n.as_ptr()).collect::<Vec<_>>();
-
-    // Required by Vulkan SDK on macOS since 1.3.216.
-    if cfg!(target_os = "macos") && entry.version()? >= PORTABILITY_MACOS_VERSION {
-        extensions.push(vk::KHR_PORTABILITY_SUBSET_EXTENSION.name.as_ptr());
-    }
-
-    // Features
-
-    let features = vk::PhysicalDeviceFeatures::builder().sampler_anisotropy(true);
-
-    // Create
-
-    let info = vk::DeviceCreateInfo::builder()
-        .queue_create_infos(&queue_infos)
-        .enabled_layer_names(&layers)
-        .enabled_extension_names(&extensions)
-        .enabled_features(&features);
-
-    let device = instance.create_device(data.physical_device, &info, None)?;
-
-    // Queues
-
-    data.graphics_queue = device.get_device_queue(indices.graphics, 0);
-    data.present_queue = device.get_device_queue(indices.present, 0);
-
-    Ok(device)
-}
-
-//================================================
-// Swapchain
-//================================================
-
-pub unsafe fn create_swapchain(window: &Window, instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
-    // Image
-
-    let indices = QueueFamilyIndices::get(instance, data, data.physical_device)?;
-    let support = SwapchainSupport::get(instance, data, data.physical_device)?;
-
-    let surface_format = get_swapchain_surface_format(&support.formats);
-    let present_mode = get_swapchain_present_mode(&support.present_modes);
-    let extent = get_swapchain_extent(window, support.capabilities);
-
-    data.swapchain_format = surface_format.format;
-    data.swapchain_extent = extent;
-
-    let mut image_count = support.capabilities.min_image_count + 1;
-    if support.capabilities.max_image_count != 0 && image_count > support.capabilities.max_image_count {
-        image_count = support.capabilities.max_image_count;
-    }
-
-    let mut queue_family_indices = vec![];
-    let image_sharing_mode = if indices.graphics != indices.present {
-        queue_family_indices.push(indices.graphics);
-        queue_family_indices.push(indices.present);
-        vk::SharingMode::CONCURRENT
-    } else {
-        vk::SharingMode::EXCLUSIVE
-    };
-
-    // Create
-
-    let info = vk::SwapchainCreateInfoKHR::builder()
-        .surface(data.surface)
-        .min_image_count(image_count)
-        .image_format(surface_format.format)
-        .image_color_space(surface_format.color_space)
-        .image_extent(extent)
-        .image_array_layers(1)
-        .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT)
-        .image_sharing_mode(image_sharing_mode)
-        .queue_family_indices(&queue_family_indices)
-        .pre_transform(support.capabilities.current_transform)
-        .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
-        .present_mode(present_mode)
-        .clipped(true)
-        .old_swapchain(vk::SwapchainKHR::null());
-
-    data.swapchain = device.create_swapchain_khr(&info, None)?;
-
-    // Images
-
-    data.swapchain_images = device.get_swapchain_images_khr(data.swapchain)?;
-
-    Ok(())
-}
-
-pub fn get_swapchain_surface_format(formats: &[vk::SurfaceFormatKHR]) -> vk::SurfaceFormatKHR {
-    formats
-        .iter()
-        .cloned()
-        .find(|f| f.format == vk::Format::B8G8R8A8_SRGB && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR)
-        .unwrap_or_else(|| formats[0])
-}
-
-pub fn get_swapchain_present_mode(present_modes: &[vk::PresentModeKHR]) -> vk::PresentModeKHR {
-    present_modes
-        .iter()
-        .cloned()
-        .find(|m| *m == vk::PresentModeKHR::MAILBOX)
-        .unwrap_or(vk::PresentModeKHR::FIFO)
-}
-
-#[rustfmt::skip]
-pub fn get_swapchain_extent(window: &Window, capabilities: vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
-    if capabilities.current_extent.width != u32::MAX {
-        capabilities.current_extent
-    } else {
-        vk::Extent2D::builder()
-            .width(window.inner_size().width.clamp(
-                capabilities.min_image_extent.width,
-                capabilities.max_image_extent.width,
-            ))
-            .height(window.inner_size().height.clamp(
-                capabilities.min_image_extent.height,
-                capabilities.max_image_extent.height,
-            ))
-            .build()
-    }
-}
-
-pub unsafe fn create_swapchain_image_views(device: &Device, data: &mut AppData) -> Result<()> {
-    data.swapchain_image_views = data
-        .swapchain_images
-        .iter()
-        .map(|i| create_image_view(device, *i, data.swapchain_format))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    Ok(())
-}
-
-//================================================
-// Pipeline
-//================================================
-
-unsafe fn create_render_pass(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
-    // Attachments
-
-    let color_attachment = vk::AttachmentDescription::builder()
-        .format(data.swapchain_format)
-        .samples(vk::SampleCountFlags::_1)
-        .load_op(vk::AttachmentLoadOp::CLEAR)
-        .store_op(vk::AttachmentStoreOp::STORE)
-        .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-        .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-        .initial_layout(vk::ImageLayout::UNDEFINED)
-        .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
-
-    // Subpasses
-
-    let color_attachment_ref = vk::AttachmentReference::builder()
-        .attachment(0)
-        .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
-
-    let color_attachments = &[color_attachment_ref];
-    let subpass = vk::SubpassDescription::builder()
-        .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
-        .color_attachments(color_attachments);
-
-    // Dependencies
-
-    let dependency = vk::SubpassDependency::builder()
-        .src_subpass(vk::SUBPASS_EXTERNAL)
-        .dst_subpass(0)
-        .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
-        .src_access_mask(vk::AccessFlags::empty())
-        .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
-        .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
-
-    // Create
-
-    let attachments = &[color_attachment];
-    let subpasses = &[subpass];
-    let dependencies = &[dependency];
-    let info = vk::RenderPassCreateInfo::builder()
-        .attachments(attachments)
-        .subpasses(subpasses)
-        .dependencies(dependencies);
-
-    data.render_pass = device.create_render_pass(&info, None)?;
-
-    Ok(())
-}
-
-unsafe fn create_descriptor_set_layout(device: &Device, data: &mut AppData) -> Result<()> {
-    let ubo_binding = vk::DescriptorSetLayoutBinding::builder()
-        .binding(0)
-        .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
-        .descriptor_count(1)
-        .stage_flags(vk::ShaderStageFlags::VERTEX);
-
-    let sampler_binding = vk::DescriptorSetLayoutBinding::builder()
-        .binding(1)
-        .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-        .descriptor_count(1)
-        .stage_flags(vk::ShaderStageFlags::FRAGMENT);
-
-    let bindings = &[ubo_binding, sampler_binding];
-    let info = vk::DescriptorSetLayoutCreateInfo::builder().bindings(bindings);
-
-    data.descriptor_set_layout = device.create_descriptor_set_layout(&info, None)?;
-
-    Ok(())
-}
-
-unsafe fn create_pipeline(device: &Device, data: &mut AppData) -> Result<()> {
-    // Stages
-
-    let vert = include_bytes!("../shaders/25/vert.spv");
-    let frag = include_bytes!("../shaders/25/frag.spv");
-
-    let vert_shader_module = create_shader_module(device, &vert[..])?;
-    let frag_shader_module = create_shader_module(device, &frag[..])?;
-
-    let vert_stage = vk::PipelineShaderStageCreateInfo::builder()
-        .stage(vk::ShaderStageFlags::VERTEX)
-        .module(vert_shader_module)
-        .name(b"main\0");
-
-    let frag_stage = vk::PipelineShaderStageCreateInfo::builder()
-        .stage(vk::ShaderStageFlags::FRAGMENT)
-        .module(frag_shader_module)
-        .name(b"main\0");
-
-    // Vertex Input State
-
-    let binding_descriptions = &[Vertex::binding_description()];
-    let attribute_descriptions = Vertex::attribute_descriptions();
-    let vertex_input_state = vk::PipelineVertexInputStateCreateInfo::builder()
-        .vertex_binding_descriptions(binding_descriptions)
-        .vertex_attribute_descriptions(&attribute_descriptions);
-
-    // Input Assembly State
-
-    let input_assembly_state = vk::PipelineInputAssemblyStateCreateInfo::builder()
-        .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
-        .primitive_restart_enable(false);
-
-    // Viewport State
-
-    let viewport = vk::Viewport::builder()
-        .x(0.0)
-        .y(0.0)
-        .width(data.swapchain_extent.width as f32)
-        .height(data.swapchain_extent.height as f32)
-        .min_depth(0.0)
-        .max_depth(1.0);
-
-    let scissor = vk::Rect2D::builder()
-        .offset(vk::Offset2D { x: 0, y: 0 })
-        .extent(data.swapchain_extent);
-
-    let viewports = &[viewport];
-    let scissors = &[scissor];
-    let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
-        .viewports(viewports)
-        .scissors(scissors);
-
-    // Rasterization State
-
-    let rasterization_state = vk::PipelineRasterizationStateCreateInfo::builder()
-        .depth_clamp_enable(false)
-        .rasterizer_discard_enable(false)
-        .polygon_mode(vk::PolygonMode::FILL)
-        .line_width(1.0)
-        .cull_mode(vk::CullModeFlags::BACK)
-        .front_face(vk::FrontFace::COUNTER_CLOCKWISE)
-        .depth_bias_enable(false);
-
-    // Multisample State
-
-    let multisample_state = vk::PipelineMultisampleStateCreateInfo::builder()
-        .sample_shading_enable(false)
-        .rasterization_samples(vk::SampleCountFlags::_1);
-
-    // Color Blend State
-
-    let attachment = vk::PipelineColorBlendAttachmentState::builder()
-        .color_write_mask(vk::ColorComponentFlags::all())
-        .blend_enable(false);
-
-    let attachments = &[attachment];
-    let color_blend_state = vk::PipelineColorBlendStateCreateInfo::builder()
-        .logic_op_enable(false)
-        .logic_op(vk::LogicOp::COPY)
-        .attachments(attachments)
-        .blend_constants([0.0, 0.0, 0.0, 0.0]);
-
-    // Layout
-
-    let set_layouts = &[data.descriptor_set_layout];
-    let layout_info = vk::PipelineLayoutCreateInfo::builder().set_layouts(set_layouts);
-
-    data.pipeline_layout = device.create_pipeline_layout(&layout_info, None)?;
-
-    // Create
-
-    let stages = &[vert_stage, frag_stage];
-    let info = vk::GraphicsPipelineCreateInfo::builder()
-        .stages(stages)
-        .vertex_input_state(&vertex_input_state)
-        .input_assembly_state(&input_assembly_state)
-        .viewport_state(&viewport_state)
-        .rasterization_state(&rasterization_state)
-        .multisample_state(&multisample_state)
-        .color_blend_state(&color_blend_state)
-        .layout(data.pipeline_layout)
-        .render_pass(data.render_pass)
-        .subpass(0);
-
-    data.pipeline = device
-        .create_graphics_pipelines(vk::PipelineCache::null(), &[info], None)?
-        .0[0];
-
-    // Cleanup
-
-    device.destroy_shader_module(vert_shader_module, None);
-    device.destroy_shader_module(frag_shader_module, None);
-
-    Ok(())
-}
-
-unsafe fn create_shader_module(device: &Device, bytecode: &[u8]) -> Result<vk::ShaderModule> {
-    let bytecode = Bytecode::new(bytecode).unwrap();
-
-    let info = vk::ShaderModuleCreateInfo::builder()
-        .code_size(bytecode.code_size())
-        .code(bytecode.code());
-
-    Ok(device.create_shader_module(&info, None)?)
-}
+//     let layers = if VALIDATION_ENABLED {
+//         vec![VALIDATION_LAYER.as_ptr()]
+//     } else {
+//         vec![]
+//     };
+
+//     // Extensions
+
+//     let mut extensions = DEVICE_EXTENSIONS.iter().map(|n| n.as_ptr()).collect::<Vec<_>>();
+
+//     // Required by Vulkan SDK on macOS since 1.3.216.
+//     if cfg!(target_os = "macos") && entry.version()? >= PORTABILITY_MACOS_VERSION {
+//         extensions.push(vk::KHR_PORTABILITY_SUBSET_EXTENSION.name.as_ptr());
+//     }
+
+//     // Features
+
+//     let features = vk::PhysicalDeviceFeatures::builder().sampler_anisotropy(true);
+
+//     // Create
+
+//     let info = vk::DeviceCreateInfo::builder()
+//         .queue_create_infos(&queue_infos)
+//         .enabled_layer_names(&layers)
+//         .enabled_extension_names(&extensions)
+//         .enabled_features(&features);
+
+//     let device = instance.create_device(data.physical_device, &info, None)?;
+
+//     // Queues
+
+//     data.graphics_queue = device.get_device_queue(indices.graphics, 0);
+//     data.present_queue = device.get_device_queue(indices.present, 0);
+
+//     Ok(device)
+// }
+
+// //================================================
+// // Swapchain
+// //================================================
+
+// pub unsafe fn create_swapchain(window: &Window, instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+//     // Image
+
+//     let indices = QueueFamilyIndices::get(instance, data, data.physical_device)?;
+//     let support = SwapchainSupport::get(instance, data, data.physical_device)?;
+
+//     let surface_format = get_swapchain_surface_format(&support.formats);
+//     let present_mode = get_swapchain_present_mode(&support.present_modes);
+//     let extent = get_swapchain_extent(window, support.capabilities);
+
+//     data.swapchain_format = surface_format.format;
+//     data.swapchain_extent = extent;
+
+//     let mut image_count = support.capabilities.min_image_count + 1;
+//     if support.capabilities.max_image_count != 0 && image_count > support.capabilities.max_image_count {
+//         image_count = support.capabilities.max_image_count;
+//     }
+
+//     let mut queue_family_indices = vec![];
+//     let image_sharing_mode = if indices.graphics != indices.present {
+//         queue_family_indices.push(indices.graphics);
+//         queue_family_indices.push(indices.present);
+//         vk::SharingMode::CONCURRENT
+//     } else {
+//         vk::SharingMode::EXCLUSIVE
+//     };
+
+//     // Create
+
+//     let info = vk::SwapchainCreateInfoKHR::builder()
+//         .surface(data.surface)
+//         .min_image_count(image_count)
+//         .image_format(surface_format.format)
+//         .image_color_space(surface_format.color_space)
+//         .image_extent(extent)
+//         .image_array_layers(1)
+//         .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+//         .image_sharing_mode(image_sharing_mode)
+//         .queue_family_indices(&queue_family_indices)
+//         .pre_transform(support.capabilities.current_transform)
+//         .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
+//         .present_mode(present_mode)
+//         .clipped(true)
+//         .old_swapchain(vk::SwapchainKHR::null());
+
+//     data.swapchain = device.create_swapchain_khr(&info, None)?;
+
+//     // Images
+
+//     data.swapchain_images = device.get_swapchain_images_khr(data.swapchain)?;
+
+//     Ok(())
+// }
+
+// pub fn get_swapchain_surface_format(formats: &[vk::SurfaceFormatKHR]) -> vk::SurfaceFormatKHR {
+//     formats
+//         .iter()
+//         .cloned()
+//         .find(|f| f.format == vk::Format::B8G8R8A8_SRGB && f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR)
+//         .unwrap_or_else(|| formats[0])
+// }
+
+// pub fn get_swapchain_present_mode(present_modes: &[vk::PresentModeKHR]) -> vk::PresentModeKHR {
+//     present_modes
+//         .iter()
+//         .cloned()
+//         .find(|m| *m == vk::PresentModeKHR::MAILBOX)
+//         .unwrap_or(vk::PresentModeKHR::FIFO)
+// }
+
+// #[rustfmt::skip]
+// pub fn get_swapchain_extent(window: &Window, capabilities: vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
+//     if capabilities.current_extent.width != u32::MAX {
+//         capabilities.current_extent
+//     } else {
+//         vk::Extent2D::builder()
+//             .width(window.inner_size().width.clamp(
+//                 capabilities.min_image_extent.width,
+//                 capabilities.max_image_extent.width,
+//             ))
+//             .height(window.inner_size().height.clamp(
+//                 capabilities.min_image_extent.height,
+//                 capabilities.max_image_extent.height,
+//             ))
+//             .build()
+//     }
+// }
+
+// pub unsafe fn create_swapchain_image_views(device: &Device, data: &mut AppData) -> Result<()> {
+//     data.swapchain_image_views = data
+//         .swapchain_images
+//         .iter()
+//         .map(|i| create_image_view(device, *i, data.swapchain_format))
+//         .collect::<Result<Vec<_>, _>>()?;
+
+//     Ok(())
+// }
+
+// //================================================
+// // Pipeline
+// //================================================
+
+// unsafe fn create_render_pass(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+//     // Attachments
+
+//     let color_attachment = vk::AttachmentDescription::builder()
+//         .format(data.swapchain_format)
+//         .samples(vk::SampleCountFlags::_1)
+//         .load_op(vk::AttachmentLoadOp::CLEAR)
+//         .store_op(vk::AttachmentStoreOp::STORE)
+//         .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+//         .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+//         .initial_layout(vk::ImageLayout::UNDEFINED)
+//         .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
+
+//     // Subpasses
+
+//     let color_attachment_ref = vk::AttachmentReference::builder()
+//         .attachment(0)
+//         .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+
+//     let color_attachments = &[color_attachment_ref];
+//     let subpass = vk::SubpassDescription::builder()
+//         .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+//         .color_attachments(color_attachments);
+
+//     // Dependencies
+
+//     let dependency = vk::SubpassDependency::builder()
+//         .src_subpass(vk::SUBPASS_EXTERNAL)
+//         .dst_subpass(0)
+//         .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+//         .src_access_mask(vk::AccessFlags::empty())
+//         .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+//         .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE);
+
+//     // Create
+
+//     let attachments = &[color_attachment];
+//     let subpasses = &[subpass];
+//     let dependencies = &[dependency];
+//     let info = vk::RenderPassCreateInfo::builder()
+//         .attachments(attachments)
+//         .subpasses(subpasses)
+//         .dependencies(dependencies);
+
+//     data.render_pass = device.create_render_pass(&info, None)?;
+
+//     Ok(())
+// }
+
+// unsafe fn create_descriptor_set_layout(device: &Device, data: &mut AppData) -> Result<()> {
+//     let ubo_binding = vk::DescriptorSetLayoutBinding::builder()
+//         .binding(0)
+//         .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
+//         .descriptor_count(1)
+//         .stage_flags(vk::ShaderStageFlags::VERTEX);
+
+//     let sampler_binding = vk::DescriptorSetLayoutBinding::builder()
+//         .binding(1)
+//         .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+//         .descriptor_count(1)
+//         .stage_flags(vk::ShaderStageFlags::FRAGMENT);
+
+//     let bindings = &[ubo_binding, sampler_binding];
+//     let info = vk::DescriptorSetLayoutCreateInfo::builder().bindings(bindings);
+
+//     data.descriptor_set_layout = device.create_descriptor_set_layout(&info, None)?;
+
+//     Ok(())
+// }
+
+// unsafe fn create_pipeline(device: &Device, data: &mut AppData) -> Result<()> {
+//     // Stages
+
+//     let vert = include_bytes!("../shaders/25/vert.spv");
+//     let frag = include_bytes!("../shaders/25/frag.spv");
+
+//     let vert_shader_module = create_shader_module(device, &vert[..])?;
+//     let frag_shader_module = create_shader_module(device, &frag[..])?;
+
+//     let vert_stage = vk::PipelineShaderStageCreateInfo::builder()
+//         .stage(vk::ShaderStageFlags::VERTEX)
+//         .module(vert_shader_module)
+//         .name(b"main\0");
+
+//     let frag_stage = vk::PipelineShaderStageCreateInfo::builder()
+//         .stage(vk::ShaderStageFlags::FRAGMENT)
+//         .module(frag_shader_module)
+//         .name(b"main\0");
+
+//     // Vertex Input State
+
+//     let binding_descriptions = &[Vertex::binding_description()];
+//     let attribute_descriptions = Vertex::attribute_descriptions();
+//     let vertex_input_state = vk::PipelineVertexInputStateCreateInfo::builder()
+//         .vertex_binding_descriptions(binding_descriptions)
+//         .vertex_attribute_descriptions(&attribute_descriptions);
+
+//     // Input Assembly State
+
+//     let input_assembly_state = vk::PipelineInputAssemblyStateCreateInfo::builder()
+//         .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
+//         .primitive_restart_enable(false);
+
+//     // Viewport State
+
+//     let viewport = vk::Viewport::builder()
+//         .x(0.0)
+//         .y(0.0)
+//         .width(data.swapchain_extent.width as f32)
+//         .height(data.swapchain_extent.height as f32)
+//         .min_depth(0.0)
+//         .max_depth(1.0);
+
+//     let scissor = vk::Rect2D::builder()
+//         .offset(vk::Offset2D { x: 0, y: 0 })
+//         .extent(data.swapchain_extent);
+
+//     let viewports = &[viewport];
+//     let scissors = &[scissor];
+//     let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
+//         .viewports(viewports)
+//         .scissors(scissors);
+
+//     // Rasterization State
+
+//     let rasterization_state = vk::PipelineRasterizationStateCreateInfo::builder()
+//         .depth_clamp_enable(false)
+//         .rasterizer_discard_enable(false)
+//         .polygon_mode(vk::PolygonMode::FILL)
+//         .line_width(1.0)
+//         .cull_mode(vk::CullModeFlags::BACK)
+//         .front_face(vk::FrontFace::COUNTER_CLOCKWISE)
+//         .depth_bias_enable(false);
+
+//     // Multisample State
+
+//     let multisample_state = vk::PipelineMultisampleStateCreateInfo::builder()
+//         .sample_shading_enable(false)
+//         .rasterization_samples(vk::SampleCountFlags::_1);
+
+//     // Color Blend State
+
+//     let attachment = vk::PipelineColorBlendAttachmentState::builder()
+//         .color_write_mask(vk::ColorComponentFlags::all())
+//         .blend_enable(false);
+
+//     let attachments = &[attachment];
+//     let color_blend_state = vk::PipelineColorBlendStateCreateInfo::builder()
+//         .logic_op_enable(false)
+//         .logic_op(vk::LogicOp::COPY)
+//         .attachments(attachments)
+//         .blend_constants([0.0, 0.0, 0.0, 0.0]);
+
+//     // Layout
+
+//     let set_layouts = &[data.descriptor_set_layout];
+//     let layout_info = vk::PipelineLayoutCreateInfo::builder().set_layouts(set_layouts);
+
+//     data.pipeline_layout = device.create_pipeline_layout(&layout_info, None)?;
+
+//     // Create
+
+//     let stages = &[vert_stage, frag_stage];
+//     let info = vk::GraphicsPipelineCreateInfo::builder()
+//         .stages(stages)
+//         .vertex_input_state(&vertex_input_state)
+//         .input_assembly_state(&input_assembly_state)
+//         .viewport_state(&viewport_state)
+//         .rasterization_state(&rasterization_state)
+//         .multisample_state(&multisample_state)
+//         .color_blend_state(&color_blend_state)
+//         .layout(data.pipeline_layout)
+//         .render_pass(data.render_pass)
+//         .subpass(0);
+
+//     data.pipeline = device
+//         .create_graphics_pipelines(vk::PipelineCache::null(), &[info], None)?
+//         .0[0];
+
+//     // Cleanup
+
+//     device.destroy_shader_module(vert_shader_module, None);
+//     device.destroy_shader_module(frag_shader_module, None);
+
+//     Ok(())
+// }
+
+// unsafe fn create_shader_module(device: &Device, bytecode: &[u8]) -> Result<vk::ShaderModule> {
+//     let bytecode = Bytecode::new(bytecode).unwrap();
+
+//     let info = vk::ShaderModuleCreateInfo::builder()
+//         .code_size(bytecode.code_size())
+//         .code(bytecode.code());
+
+//     Ok(device.create_shader_module(&info, None)?)
+// }
 
 //================================================
 // Framebuffers
