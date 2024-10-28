@@ -18,10 +18,11 @@ use cgmath::{vec2, vec3};
 use vulkanalia::prelude::v1_0::*;
 use vulkanalia::Version;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, WindowEvent};
+use winit::event::{Event, MouseButton, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 use crate::structs::Vertex;
+use winit::keyboard::{Key, PhysicalKey};
 
 pub mod logfile;
 pub mod proc;
@@ -95,10 +96,12 @@ fn main() -> Result<()> {
     let mut app = unsafe { App::create(&window)? };
     let mut minimized = false;
     event_loop.run(move |event, elwt| {
-        match event {
+        match event 
+        {
             // Request a redraw when all events were processed.
             Event::AboutToWait => window.request_redraw(),
-            Event::WindowEvent { event, .. } => match event {
+            Event::WindowEvent { event, .. } => match event 
+            {
                 // Render a frame if our Vulkan app is not being destroyed.
                 WindowEvent::RedrawRequested if !elwt.exiting() && !minimized => {
                     unsafe { app.render(&window) }.unwrap();
@@ -112,12 +115,62 @@ fn main() -> Result<()> {
                         app.resized = true;
                     }
                 }
+                
+                WindowEvent::KeyboardInput { event, is_synthetic:false, ..} =>
+                {
+                    //let mods = window.modifiers;
+
+                    // Dispatch actions only on press.
+                    if event.state.is_pressed() 
+                    {
+                        println!("physical_key: {:?}", event.physical_key);
+                        if event.physical_key == winit::keyboard::KeyCode::Escape
+                        {
+                            println!("ESC"); 
+                            elwt.exit();
+                            unsafe { app.destroy(); }                                   
+                        }
+
+                        if let Key::Character(ch) = event.logical_key.as_ref() 
+                        {
+                            println!("logical_key: {:?}", event.logical_key);
+                            println!("{}", ch.to_uppercase());    
+                            //if ch==27
+                            //{
+                            //    print!("ESC");                                    
+                            //}
+                        } 
+    
+                    }
+
+                }
+
+                WindowEvent::MouseInput { device_id, state, button } =>
+                {
+                    //println!("WindowEvent::MouseInput {:?}", event);
+                    if button == MouseButton::Left      {println!("Left   Mouse Button Pressed");};
+                    if button == MouseButton::Middle    {println!("Middle Mouse Button Pressed");};
+                    if button == MouseButton::Right     {println!("Right  Mouse Button Pressed");};
+
+                }
+
                 // Destroy our Vulkan app.
-                WindowEvent::CloseRequested => {
+                WindowEvent::CloseRequested => 
+                {
                     elwt.exit();
                     unsafe { app.destroy(); }
                 }
-                _ => {}
+
+                WindowEvent::CursorMoved { device_id, position } =>
+                {
+                    //println!("WindowEvent::CursorMoved {:?}", event);
+                    println!("{:?}", position);
+                }
+
+                _ => 
+                {
+                    //println!("{:?}", event);
+                }
             }
             _ => {}
         }
