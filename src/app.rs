@@ -15,6 +15,7 @@ use crate::instance::create_instance;
 use crate::physicalDevice::pick_physical_device;
 
 use crate::logicalDevice::create_logical_device;
+use crate::rustDoom::RustDoom;
 use crate::swapchain::create_swapchain;
 use crate::swapchain::create_swapchain_image_views;
 
@@ -36,7 +37,7 @@ use crate::descriptors::create_descriptor_sets;
 use crate::commandBuffers::create_command_buffers;
 use crate::syncObjects::create_sync_objects;
 use crate::structs::UniformBufferObject;
-
+use crate::rustDoom;
 
 use crate::VALIDATION_ENABLED;
 use crate::MAX_FRAMES_IN_FLIGHT;
@@ -44,14 +45,16 @@ use crate::structs::Mat4;
 
 /// Our Vulkan app.
 #[derive(Clone, Debug)]
-pub struct App {
-    pub entry: Entry,
-    pub instance: Instance,
-    pub data: AppData,
-    pub device: Device,
-    pub frame: usize,
-    pub resized: bool,
-    pub start: Instant,
+pub struct App 
+{
+    pub     entry       : Entry,
+    pub     instance    : Instance,
+    pub     data        : AppData,
+    pub     device      : Device,
+    pub     frame       : usize,
+    pub     resized     : bool,
+    pub     start       : Instant,
+    //pub   ourRustDoom : RustDoom,     // will have to #[derive(Clone, Debug)]
 }
 
 impl App {

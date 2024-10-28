@@ -22,7 +22,6 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 use crate::structs::Vertex;
-use crate::rustDoom::mainRustDoom;
 
 pub mod logfile;
 pub mod proc;
@@ -49,8 +48,8 @@ pub mod sharedOther;
 pub mod structs;
 pub mod rustDoom;
 
+use rustDoom::RustDoom;
 
-     
 /// Whether the validation layers should be enabled.
 const VALIDATION_ENABLED: bool = false /*cfg!(debug_assertions)*/;
 /// The name of the validation layers.
@@ -81,7 +80,7 @@ const INDICES: &[u16] = &[0, 1, 2, 2, 3, 0];
 fn main() -> Result<()> {
     pretty_env_logger::init();
 
-    mainRustDoom();
+    let ourRustDoom = RustDoom::createRustDoom();
 
     // Window
 
