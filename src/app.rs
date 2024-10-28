@@ -41,8 +41,13 @@ use crate::pipeline::create_render_pass;
 use crate::pipeline::create_descriptor_set_layout;
 use crate::pipeline::create_pipeline;
 
-use crate::{create_framebuffers, create_command_pool, create_texture_image, create_texture_image_view};
-use crate::{create_texture_sampler, create_vertex_buffer, create_index_buffer, create_descriptor_pool};
+use crate::frameBuffers::create_framebuffers;
+use crate::commandPool::create_command_pool;
+
+use crate::texture::create_texture_image;
+use crate::texture::create_texture_image_view;
+use crate::texture::create_texture_sampler;
+use crate::{create_vertex_buffer, create_index_buffer, create_descriptor_pool};
 use crate::{create_descriptor_sets, create_command_buffers};
 use crate::{create_uniform_buffers, create_sync_objects};
 use crate::UniformBufferObject;
