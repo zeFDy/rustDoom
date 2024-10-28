@@ -3,11 +3,7 @@
 #![allow(dead_code)]
 
 use std::{fs, usize};
-// use std::{io::Write, vec};
-// use colored::Colorize;
 use std::process::exit;
-// use fs::File;
-// use chrono::{DateTime, Utc};
 use crate::logfile::myLogFile;
 use crate::rustDoom::LOG_MODEL_DETAILS;
 

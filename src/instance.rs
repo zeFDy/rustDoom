@@ -1,51 +1,16 @@
-// Vulkanalia tuto
-
 use std::collections::HashSet;
 use std::ffi::CStr;
-// use std::ffi::CString;
-// use std::fs::File;
-// use std::io::Read;
-// use std::mem::size_of;
 use std::os::raw::c_void;
-// use std::ptr::copy_nonoverlapping as memcpy;
-// use std::time::Instant;
-
 use anyhow::{anyhow, Result};
-// use cgmath::{point3, vec2, vec3, Deg};
 use log::*;
-// use thiserror::Error;
-// use vulkanalia::bytecode::Bytecode;
-// use vulkanalia::loader::{LibloadingLoader, LIBRARY};
 use vulkanalia::prelude::v1_0::*;
 use vulkanalia::window as vk_window;
-// use vulkanalia::Version;
-// use winit::dpi::LogicalSize;
-// use winit::event::{Event, WindowEvent};
-// use winit::event_loop::EventLoop;
 use winit::window::Window;
-// use winit::window::WindowBuilder;
-
 use vulkanalia::vk::ExtDebugUtilsExtension;
-// use vulkanalia::vk::KhrSurfaceExtension;
-// use vulkanalia::vk::KhrSwapchainExtension;
-
 use crate::app::AppData;
-
-
 use crate::VALIDATION_ENABLED;
 use crate::VALIDATION_LAYER;
-// use crate::DEVICE_EXTENSIONS;
 use crate::PORTABILITY_MACOS_VERSION;
-// use crate::MAX_FRAMES_IN_FLIGHT;
-
-// use crate::Vec2;
-// use crate::Vec3;
-// use crate::Mat4;
-
-// type Vec2 = cgmath::Vector2<f32>;
-// type Vec3 = cgmath::Vector3<f32>;
-// type Mat4 = cgmath::Matrix4<f32>;
-
 
 //================================================
 // Instance

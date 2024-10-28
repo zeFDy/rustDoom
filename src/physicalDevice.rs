@@ -1,32 +1,8 @@
-// Vulkanalia tuto
-
 use std::collections::HashSet;
-// use std::ffi::{CStr, CString};
-// use std::fs::File;
-// use std::io::Read;
-// use std::mem::size_of;
-// use std::os::raw::c_void;
-// use std::ptr::copy_nonoverlapping as memcpy;
-// use std::time::Instant;
-
 use anyhow::{anyhow, Result};
-// use cgmath::{point3, vec2, vec3, Deg};
 use log::*;
 use thiserror::Error;
-// use vulkanalia::bytecode::Bytecode;
-// use vulkanalia::loader::{LibloadingLoader, LIBRARY};
 use vulkanalia::prelude::v1_0::*;
-// use vulkanalia::window as vk_window;
-// use vulkanalia::Version;
-// use winit::dpi::LogicalSize;
-// use winit::event::{Event, WindowEvent};
-// use winit::event_loop::EventLoop;
-// use winit::window::{Window, WindowBuilder};
-
-// use vulkanalia::vk::ExtDebugUtilsExtension;
-// use vulkanalia::vk::KhrSurfaceExtension;
-// use vulkanalia::vk::KhrSwapchainExtension;
-
 use crate::structs::SwapchainSupport;
 use crate::DEVICE_EXTENSIONS;
 use crate::structs::QueueFamilyIndices;

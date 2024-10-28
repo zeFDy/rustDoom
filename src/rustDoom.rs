@@ -1,19 +1,13 @@
 use std::fs;
 use crate::logfile::myLogFile;
-//use crate::proc::mapProcFile;
 use crate::mtr::mtrFile;
 use crate::welcome::welcomeBanner;
 use crate::scene::Scene;
-
-//use std::error::Error;
-//use std::io::{self, Read};
-//use std::fs::DirEntry;
 use std::path::Path;
 use zip::ZipArchive;
 use std::fs::File;
 use std::io::Read;
 
-// rustDoom
 
 // Log Options for test/debug
 pub const LOG_FILENAME_FROM_ZIP_ARCHIVE :bool = false;       
@@ -84,7 +78,7 @@ fn newPakFileInfoItem (fileName:&String, zipFilePath:&Path, iIndex:usize) -> pak
     thisFileInfo
 }
 
-fn mainRustDoom() 
+pub fn mainRustDoom() 
 {
     let mut procFilesInfoList:  Vec<pakFileInfo>    = Vec::new();
     let mut mapFilesInfoList:   Vec<pakFileInfo>    = Vec::new();

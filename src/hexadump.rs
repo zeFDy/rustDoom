@@ -2,14 +2,6 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-// use std::{fs, io::Write, usize, vec};
-// use colored::Colorize;
-// use std::process::exit;
-// use fs::File;
-// use chrono::{DateTime, Utc};
-// use crate::logfile::myLogFile;
-
-
 fn HexaDump(toDisplay:&Vec<u8>)
 {
     let mut index =0;

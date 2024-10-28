@@ -3,11 +3,7 @@
 #![allow(dead_code)]
 
 use std::{fs, io::Write};
-// use std::{usize, vec};
-// use colored::Colorize;
-// use std::process::exit;
 use fs::File;
-// use chrono::{DateTime, Utc};
 
 pub struct myLogFile
 {
