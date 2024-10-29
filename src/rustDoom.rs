@@ -19,6 +19,7 @@ pub const LOG_TGA_FILELIST              :bool = true;
 pub const LOG_MODEL_DETAILS             :bool = false;
 
 
+#[derive(Clone, Debug)]
 struct  pakFileInfo
 {
         sFileName       : String,
@@ -26,7 +27,7 @@ struct  pakFileInfo
         archiveIndex    : usize,
 }
 
-//#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct  RustDoom
 {
         procFilesInfoList:  Vec<pakFileInfo>,
@@ -90,10 +91,29 @@ impl    RustDoom
         thisFileInfo
     }
 
-    pub fn readFileFromPak(fileName:&String)
+    pub fn readFileFromPak(&mut self, fileName:&String)
     {
+            println!("readFileFromPak({:#?});", fileName);
 
-        
+            let listSize = self.tgaFilesInfoList.len();
+            let mut iCounter: usize =0;
+            loop
+            {
+                if iCounter>=listSize    {break;}
+                
+                let thisEntry = self.tgaFilesInfoList.get(iCounter).expect("out of range");
+                //let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
+                //ourLogFile.log(sMessage);
+    
+                if thisEntry.sFileName == *fileName
+                {
+                    println!("--> found !");
+                }
+
+                iCounter += 1;
+    
+            }
+    
     }
 
     pub fn createRustDoom() -> RustDoom 

@@ -15,7 +15,10 @@ use stb_image::stb_image;
 //================================================
 
 pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
+    
     // Load
+    let thisFileName = "textures/base_wall/a_lfwall5_d01.tga".to_string();
+    data.ourRustDoom.readFileFromPak(&thisFileName);
 
     /*
     // version texture png

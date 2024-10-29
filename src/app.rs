@@ -65,6 +65,7 @@ impl App {
         let mut data = AppData::default();
         let instance = create_instance(window, &entry, &mut data)?;
         data.surface = vk_window::create_surface(&instance, &window, &window)?;
+        data.ourRustDoom = RustDoom::createRustDoom();
         pick_physical_device(&instance, &mut data)?;
         let device = create_logical_device(&entry, &instance, &mut data)?;
         create_swapchain(window, &instance, &device, &mut data)?;
@@ -92,6 +93,7 @@ impl App {
             frame: 0,
             resized: false,
             start: Instant::now(),
+            //ourRustDoom,
         })
     }
 
@@ -312,4 +314,6 @@ pub struct AppData {
     pub render_finished_semaphores: Vec<vk::Semaphore>,
     pub in_flight_fences: Vec<vk::Fence>,
     pub images_in_flight: Vec<vk::Fence>,
+
+    pub ourRustDoom : RustDoom,     // will have to #[derive(Clone, Debug)]
 }

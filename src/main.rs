@@ -81,7 +81,7 @@ const INDICES: &[u16] = &[0, 1, 2, 2, 3, 0];
 fn main() -> Result<()> {
     pretty_env_logger::init();
 
-    let ourRustDoom = RustDoom::createRustDoom();
+    //let ourRustDoom = RustDoom::createRustDoom();
 
     // Window
 
