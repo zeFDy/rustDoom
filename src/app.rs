@@ -38,10 +38,14 @@ use crate::commandBuffers::create_command_buffers;
 use crate::syncObjects::create_sync_objects;
 use crate::structs::UniformBufferObject;
 use crate::rustDoom;
+use crate::logfile::myLogFile;
+use crate::welcome::welcomeBanner;
+use crate::scene::Scene;
 
 use crate::VALIDATION_ENABLED;
 use crate::MAX_FRAMES_IN_FLIGHT;
 use crate::structs::Mat4;
+
 
 /// Our Vulkan app.
 #[derive(Clone, Debug)]
@@ -59,13 +63,20 @@ pub struct App
 
 impl App {
     /// Creates our Vulkan app.
-    pub unsafe fn create(window: &Window) -> Result<Self> {
+    pub unsafe fn create(window: &Window) -> Result<Self> 
+    {
+        let mut theLogFile = myLogFile::open();
+        welcomeBanner::welcomeBanner(&mut theLogFile);
+
         let loader = LibloadingLoader::new(LIBRARY)?;
         let entry = Entry::new(loader).map_err(|b| anyhow!("{}", b))?;
         let mut data = AppData::default();
         let instance = create_instance(window, &entry, &mut data)?;
         data.surface = vk_window::create_surface(&instance, &window, &window)?;
-        data.ourRustDoom = RustDoom::createRustDoom();
+        data.ourRustDoom = RustDoom::createRustDoom(&mut theLogFile);
+        //let mut sBuffer = "".to_string();
+        //data.ourRustDoom.readProcFileFromPak(&"maps/game/admin.proc".to_string(), &mut sBuffer);
+        let ourScene = Scene::openFromPak(&mut theLogFile, &mut data, "admin");
         pick_physical_device(&instance, &mut data)?;
         let device = create_logical_device(&entry, &instance, &mut data)?;
         create_swapchain(window, &instance, &device, &mut data)?;
@@ -316,4 +327,5 @@ pub struct AppData {
     pub images_in_flight: Vec<vk::Fence>,
 
     pub ourRustDoom : RustDoom,     // will have to #[derive(Clone, Debug)]
+    //pub ourLogFile  : myLogFile,
 }

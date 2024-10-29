@@ -5,6 +5,7 @@
 use std::{fs, io::Write};
 use fs::File;
 
+
 pub struct myLogFile
 {
     myFile :File,

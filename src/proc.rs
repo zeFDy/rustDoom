@@ -6,7 +6,7 @@ use std::{fs, usize};
 use std::process::exit;
 use crate::logfile::myLogFile;
 use crate::rustDoom::LOG_MODEL_DETAILS;
-
+use crate::AppData;
 
 pub struct Vertex
 {
@@ -123,6 +123,39 @@ impl mapProcFile
             //carac         : 0x00,
             bEOF            : false,
             uiSize          : bufferSize,
+        };
+
+        //self.pathProcFile   = fileName.clone();
+        //let contenuProcFile = fs::read_to_string(pathProcFile).expect("Can't read file");
+        //HexaDump(&contenuProcFile);     // borrow it (by reference) to avoid movement...
+        //println!("{}", contenuProcFile);
+        ourFile
+    }
+
+    pub fn openFromPak(theLogFile:&mut myLogFile, data: &mut AppData, fileName:&str) -> mapProcFile
+    {
+        let sMessage = format!("Open mapProcFile {}\n", fileName);
+        theLogFile.log(sMessage.to_string());
+        
+        /*
+        let ucBuffer          = fs::read(fileName).expect("Can't read file");
+        let bufferSize          = ucBuffer.len();
+        */
+        let     sFileName = fileName.to_string();
+        let mut ucBuffer = Vec::new();
+        data.ourRustDoom.readProcFileFromPak(&sFileName,  &mut ucBuffer);
+        let size = ucBuffer.len();
+
+        let ourFile = mapProcFile
+        {
+            //pathProcFile  : fileName.to_string(),
+            //logFile       : theLogFile,
+            iType           : 0x03,
+            inputBuffer     : ucBuffer,
+            readOffset      : 0x00,
+            //carac         : 0x00,
+            bEOF            : false,
+            uiSize          : size,
         };
 
         //self.pathProcFile   = fileName.clone();

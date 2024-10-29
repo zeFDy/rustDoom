@@ -93,7 +93,7 @@ impl    RustDoom
 
     pub fn readTgaFileFromPak(&mut self, fileName:&String, buffer : &mut Vec<u8> ) 
     {
-            println!("readFileFromPak({:#?});", fileName);
+            println!("readTgaFileFromPak({:#?});", fileName);
             //let mut thisVector = Vec::new();
 
             let listSize = self.tgaFilesInfoList.len();
@@ -117,6 +117,7 @@ impl    RustDoom
                     let mut file = archive.by_index(thisEntry.archiveIndex).expect("file error");
     
                     file.read_to_end(buffer);
+                    return;
                 }
 
                 iCounter += 1;
@@ -125,7 +126,41 @@ impl    RustDoom
     
     }
 
-    pub fn createRustDoom() -> RustDoom 
+    pub fn readProcFileFromPak(&mut self, fileName:&String, buffer : &mut Vec<u8> )
+    {
+        println!("readProcFileFromPak({:#?});", fileName);
+        //let mut thisVector = Vec::new();
+
+        let listSize = self.procFilesInfoList.len();
+        let mut iCounter: usize =0;
+        loop
+        {
+            if iCounter>=listSize    {break;}
+            
+            let thisEntry = self.procFilesInfoList.get(iCounter).expect("out of range");
+            //let thisEntry = self.procFilesInfoList.get(iCounter).expect("out of range");
+            //let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
+            //ourLogFile.log(sMessage);
+
+            if thisEntry.sFileName == *fileName
+            {
+                println!("--> found !");
+
+                let zipFilePath = Path::new(&thisEntry.sPakFileName);
+                let zipFile = File::open(zipFilePath).expect("file error");
+                let mut archive = ZipArchive::new(zipFile).expect("file error");
+                let mut file = archive.by_index(thisEntry.archiveIndex).expect("file error");
+                
+                //file.read_to_string(buffer);
+                file.read_to_end(buffer);
+                return;
+            }
+
+            iCounter += 1;
+        }
+    }
+
+    pub fn createRustDoom(mut theLogFile:&mut myLogFile) -> RustDoom 
     {
 
         let mut thisProcFilesInfoList:  Vec<pakFileInfo>    = Vec::new();
@@ -136,10 +171,6 @@ impl    RustDoom
         // let mut wavFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
         // let mut oggFilesInfoList:   Vec<pakFileInfo>    = Vec::new();
         let mut thisMtrFilesContent:    Vec<String>         = Vec::new();
-
-        let mut theLogFile = myLogFile::open();
-        welcomeBanner::welcomeBanner(&mut theLogFile);
-
 
         let entries = fs::read_dir(".").expect("io error");
 
@@ -288,8 +319,10 @@ impl    RustDoom
                                     &thisTgaFilesInfoList);
         }
 
+        /*
         let ourScene = Scene::open(&mut theLogFile, "admin");
         let ourMtfFile = mtrFile::open(&mut theLogFile, "materials\\base_floor.mtr");
+        */
 
         let thisRustDoom =  RustDoom
         {
