@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-fn HexaDump(toDisplay:&Vec<u8>)
+pub fn HexaDump(toDisplay:&Vec<u8>)
 {
     let mut index =0;
     let mut ascii: std::string::String = std::string::String::new();

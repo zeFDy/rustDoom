@@ -9,6 +9,10 @@ use crate::sharedImages::create_image_view;
 use crate::sharedImages::transition_image_layout;
 use crate::sharedImages::copy_buffer_to_image;
 use stb_image::stb_image;
+use std::fs::File;
+use std::io::Read;
+
+use crate::hexadump;
 
 //================================================
 // Texture
@@ -17,8 +21,6 @@ use stb_image::stb_image;
 pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &mut AppData) -> Result<()> {
     
     // Load
-    let thisFileName = "textures/base_wall/a_lfwall5_d01.tga".to_string();
-    data.ourRustDoom.readFileFromPak(&thisFileName);
 
     /*
     // version texture png
@@ -34,13 +36,14 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
     let (width, height) = reader.info().size();
     */
 
+    /*
     // version stb_image
     let mut x: i32 =0;
     let mut y: i32 =0;
     let mut channelsInFile: i32 =0;
     let tgaFileName:std::ffi::CString = CString::new("resources/a_lflift_d02.tga").expect("CString new failed");
 
-    let mut stbPixels = stb_image::stbi_load(     tgaFileName.as_ptr(), 
+    let mut stbPixels = stb_image::stbi_load(    tgaFileName.as_ptr(), 
                                                         &mut x, 
                                                         &mut y, 
                                                         &mut channelsInFile,          // RGB 
@@ -62,13 +65,20 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
         
         if iCounter>= size as usize    {break;};
     }
+    */
 
-    /*
-    let mut tgaImageFile    = File::open("resources/a_lflift_d02.tga")?;
     
+    let mut readBuffer:Vec<u8> = Vec::new();
+    let ourTgaFileName = "textures/base_wall/a_lflift_d02.tga".to_string();
+    data.ourRustDoom.readTgaFileFromPak(&ourTgaFileName,  &mut readBuffer);
     
-    let mut readBuffer = Vec::new();
-    tgaImageFile.read_to_end(&mut readBuffer);
+
+    //hexadump::HexaDump(&readBuffer);
+
+    //let mut tgaImageFile    = File::open("resources/a_lflift_d02.tga")?;
+    //let mut readBuffer:Vec<u8> = Vec::new();
+    //tgaImageFile.read_to_end(&mut readBuffer);
+    
 
     let tga_idLength        : u8    = readBuffer[0];
     let tga_colorMapType    : u8    = readBuffer[1];
@@ -127,9 +137,9 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
         */   
 
         if iCounter>= tga_imageSize as usize    {break;};
+        if (iCounter+tga_iCounter)>= readBuffer.len()    {break;};
     }
-    */
-
+   
     // Create (staging)
 
     let (staging_buffer, staging_buffer_memory) = create_buffer(

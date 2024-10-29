@@ -91,9 +91,10 @@ impl    RustDoom
         thisFileInfo
     }
 
-    pub fn readFileFromPak(&mut self, fileName:&String)
+    pub fn readTgaFileFromPak(&mut self, fileName:&String, buffer : &mut Vec<u8> ) 
     {
             println!("readFileFromPak({:#?});", fileName);
+            //let mut thisVector = Vec::new();
 
             let listSize = self.tgaFilesInfoList.len();
             let mut iCounter: usize =0;
@@ -102,12 +103,20 @@ impl    RustDoom
                 if iCounter>=listSize    {break;}
                 
                 let thisEntry = self.tgaFilesInfoList.get(iCounter).expect("out of range");
+                //let thisEntry = self.procFilesInfoList.get(iCounter).expect("out of range");
                 //let sMessage = format!("{:20} {:7} {}\n", thisEntry.sPakFileName, thisEntry.archiveIndex, thisEntry.sFileName);
                 //ourLogFile.log(sMessage);
     
                 if thisEntry.sFileName == *fileName
                 {
                     println!("--> found !");
+
+                    let zipFilePath = Path::new(&thisEntry.sPakFileName);
+                    let zipFile = File::open(zipFilePath).expect("file error");
+                    let mut archive = ZipArchive::new(zipFile).expect("file error");
+                    let mut file = archive.by_index(thisEntry.archiveIndex).expect("file error");
+    
+                    file.read_to_end(buffer);
                 }
 
                 iCounter += 1;
