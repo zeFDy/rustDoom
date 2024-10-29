@@ -1,4 +1,4 @@
-use std::ffi::CString;
+//use std::ffi::CString;
 use std::ptr::copy_nonoverlapping as memcpy;
 use anyhow::Result;
 use vulkanalia::prelude::v1_0::*;
@@ -8,11 +8,11 @@ use crate::sharedImages::create_image;
 use crate::sharedImages::create_image_view;
 use crate::sharedImages::transition_image_layout;
 use crate::sharedImages::copy_buffer_to_image;
-use stb_image::stb_image;
-use std::fs::File;
-use std::io::Read;
+//use stb_image::stb_image;
+//use std::fs::File;
+//use std::io::Read;
 
-use crate::hexadump;
+//use crate::hexadump;
 
 //================================================
 // Texture
@@ -67,15 +67,19 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
     }
     */
 
+    // "textures/base_wall/a_lfwall5_d01.tga"   -> 24bpp
+    // "textures/base_wall/a_lflift_d02.tga"    -> 32bpp
+    // "textures/base_wall/a_lfwall26_d02.tga"  -> 24bpp
+    // "textures/base_door/smdoor1a.tga"        -> 24bpp
     
     let mut readBuffer:Vec<u8> = Vec::new();
-    let ourTgaFileName = "textures/base_wall/a_lflift_d02.tga".to_string();
+    let ourTgaFileName = "textures/alphalabs/a_lfwall12a2.tga".to_string();
     data.ourRustDoom.readTgaFileFromPak(&ourTgaFileName,  &mut readBuffer);
     
 
     //hexadump::HexaDump(&readBuffer);
 
-    //let mut tgaImageFile    = File::open("resources/a_lflift_d02.tga")?;
+    //let mut tgaImageFile    = File::open("resources/a_lflift_d02.tga")?;  //32bpp
     //let mut readBuffer:Vec<u8> = Vec::new();
     //tgaImageFile.read_to_end(&mut readBuffer);
     
@@ -91,17 +95,22 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
     let tga_bpp             : u8    = readBuffer[16];
     let tga_imageDesc       : u8    = readBuffer[17];
 
-    let tga_bytesPerPixel   : u8    = 4 /*3*/ /*tga_bpp / 8*/;  // a priori l'image source a 4 octets per pixel (RGBA)
+    let tga_bytesPerPixel   : u8    = tga_bpp / 8;      // a priori l'image source a 3 (RGB) ou 4 octets per pixel (RGBA)
     let dst_bytesPerPixel   : u8    = 4 /*(tga_bpp/8) + 1*/;   // +1 for A8
     let tga_imageSize       : u32   = tga_width as u32 * tga_height as u32 * tga_bytesPerPixel as u32;
     let dst_imageSize       : u32   = tga_width as u32 * tga_height as u32 * dst_bytesPerPixel as u32;
+
+    println!("tga_imageTypeCode     {}",tga_imageTypeCode);
+    println!("tga_width             {}",tga_width);
+    println!("tga_height            {}",tga_height);
+    println!("tga_bpp               {}",tga_bpp);
 
     if tga_imageTypeCode != 0x02 /*TFT_RGB*/ 
     {
         panic!("Image format not supported");       // TFT_RGB est RGB non compressé
     }
 
-    let mut tga_iCounter:usize      = 18 as usize + tga_idLength as usize;       // skip the id
+    let tga_iCounter:usize          = 18 as usize + tga_idLength as usize;       // skip the id
     let size:u64                    = /*tga_imageSize*/ dst_imageSize as u64;
     let width:u32                   = tga_width as u32;
     let height:u32                  = tga_height as u32;
@@ -118,9 +127,14 @@ pub unsafe fn create_texture_image(instance: &Instance, device: &Device, data: &
         iCounter += 1;
         let CompR = readBuffer[iCounter   +tga_iCounter];
         iCounter += 1;
-        let CompA = readBuffer[iCounter   +tga_iCounter];
-        iCounter += 1;
-                
+
+        let CompA = 0xFF;
+        if  tga_bytesPerPixel==4
+        {
+            let CompA = readBuffer[iCounter   +tga_iCounter];
+            iCounter += 1;
+        }
+
         pixels.push(/*0x00*/ CompR);        // R      
         pixels.push(/*0x00*/ CompG);        // G 
         pixels.push(/*0xFF*/ CompB);        // B

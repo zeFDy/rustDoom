@@ -22,7 +22,8 @@ use winit::event::{Event, MouseButton, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 use crate::structs::Vertex;
-use winit::keyboard::{Key, PhysicalKey};
+use winit::keyboard::Key;
+//use winit::keyboard::PhysicalKey;
 
 pub mod logfile;
 pub mod proc;
@@ -49,7 +50,7 @@ pub mod sharedOther;
 pub mod structs;
 pub mod rustDoom;
 
-use rustDoom::RustDoom;
+//use rustDoom::RustDoom;
 
 /// Whether the validation layers should be enabled.
 const VALIDATION_ENABLED: bool = false /*cfg!(debug_assertions)*/;

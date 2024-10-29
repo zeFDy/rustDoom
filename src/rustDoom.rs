@@ -1,8 +1,8 @@
 use std::fs;
 use crate::logfile::myLogFile;
-use crate::mtr::mtrFile;
-use crate::welcome::welcomeBanner;
-use crate::scene::Scene;
+//use crate::mtr::mtrFile;
+//use crate::welcome::welcomeBanner;
+//use crate::scene::Scene;
 use std::path::Path;
 use zip::ZipArchive;
 use std::fs::File;
@@ -116,7 +116,7 @@ impl    RustDoom
                     let mut archive = ZipArchive::new(zipFile).expect("file error");
                     let mut file = archive.by_index(thisEntry.archiveIndex).expect("file error");
     
-                    file.read_to_end(buffer);
+                    let _ = file.read_to_end(buffer);   // check Err ?
                     return;
                 }
 
@@ -152,7 +152,7 @@ impl    RustDoom
                 let mut file = archive.by_index(thisEntry.archiveIndex).expect("file error");
                 
                 //file.read_to_string(buffer);
-                file.read_to_end(buffer);
+                let _ = file.read_to_end(buffer);   // check Err ?
                 return;
             }
 

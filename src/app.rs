@@ -37,7 +37,7 @@ use crate::descriptors::create_descriptor_sets;
 use crate::commandBuffers::create_command_buffers;
 use crate::syncObjects::create_sync_objects;
 use crate::structs::UniformBufferObject;
-use crate::rustDoom;
+//use crate::rustDoom;
 use crate::logfile::myLogFile;
 use crate::welcome::welcomeBanner;
 use crate::scene::Scene;
@@ -77,6 +77,8 @@ impl App {
         //let mut sBuffer = "".to_string();
         //data.ourRustDoom.readProcFileFromPak(&"maps/game/admin.proc".to_string(), &mut sBuffer);
         let ourScene = Scene::openFromPak(&mut theLogFile, &mut data, "admin");
+        
+        
         pick_physical_device(&instance, &mut data)?;
         let device = create_logical_device(&entry, &instance, &mut data)?;
         create_swapchain(window, &instance, &device, &mut data)?;
